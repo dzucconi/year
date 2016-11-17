@@ -25,6 +25,15 @@ body {
   padding: 2em;
 }
 
+input {
+  appearance: none;
+  border: none;
+  width: 4em;
+}
+  input:focus {
+    outline: none;
+  }
+
 .months {
   margin: 1em;
 }
@@ -33,7 +42,9 @@ body {
   position: absolute;
 }
 
-.week {}
+.week {
+  white-space: nowrap;
+}
 
 .day {
   display: inline-block;
@@ -44,11 +55,24 @@ body {
     opacity: 0;
   }
 
-input {
-  appearance: none;
-  border: none;
-  width: 4em;
-}
-  input:focus {
-    outline: none;
+@media (max-width: 800px) {
+  body {
+    padding: 1.5em;
   }
+
+  body,
+  input {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 1em;
+  }
+
+  body,
+  input {
+    font-size: 20px;
+  }
+}
