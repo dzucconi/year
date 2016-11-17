@@ -1,0 +1,54 @@
+html {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body,
+input {
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Helvetica Neue', sans-serif;
+  font-size: 40px;
+}
+
+body {
+  padding: 2em;
+}
+
+.months {
+  margin: 1em;
+}
+
+.month {
+  position: absolute;
+}
+
+.week {}
+
+.day {
+  display: inline-block;
+  width: 2em;
+  opacity: 0.1;
+}
+  .day--zero {
+    opacity: 0;
+  }
+
+input {
+  appearance: none;
+  border: none;
+  width: 4em;
+}
+  input:focus {
+    outline: none;
+  }
