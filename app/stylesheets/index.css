@@ -19,6 +19,8 @@ input {
   -webkit-font-smoothing: antialiased;
   font-family: 'Helvetica Neue', sans-serif;
   font-size: 40px;
+  background-color: black;
+  color: white;
 }
 
 body {
@@ -35,11 +37,14 @@ input {
   }
 
 .months {
-  margin: 1em;
+  margin: 1em auto;
+  position: relative;
 }
 
 .month {
   position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .week {
@@ -53,6 +58,10 @@ input {
 }
   .day--zero {
     opacity: 0;
+  }
+  .day:first-child,
+  .day:last-child {
+    color: red;
   }
 
 @media (max-width: 800px) {
