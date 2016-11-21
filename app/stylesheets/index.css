@@ -19,8 +19,8 @@ input {
   -webkit-font-smoothing: antialiased;
   font-family: 'Helvetica Neue', sans-serif;
   font-size: 40px;
-  background-color: black;
-  color: white;
+  background-color: white;
+  color: brown;
 }
 
 body {
@@ -31,14 +31,25 @@ input {
   appearance: none;
   border: none;
   width: 4em;
+  text-align: center;
+  user-select: none;
 }
   input:focus {
     outline: none;
   }
 
+.app {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
 .months {
   margin: 1em auto;
   position: relative;
+  text-align: left;
 }
 
 .month {
