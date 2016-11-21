@@ -17,10 +17,13 @@ body {
 body,
 input {
   -webkit-font-smoothing: antialiased;
-  font-family: 'Helvetica Neue', sans-serif;
   font-size: 40px;
   background-color: white;
   color: brown;
+  font-family: -apple-system, BlinkMacSystemFont,
+    'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans',
+    'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 body {
