@@ -1,15 +1,21 @@
 import { Calendar } from 'calendar';
 import parameters from 'queryparams';
 import throttle from 'lodash.throttle';
+import length from 'reading-time';
+
 import max from './lib/max';
 import { on, off } from './lib/events';
 import rand from './lib/rand';
 import draw from './lib/draw';
+import timeout from './lib/timeout';
+
+import questions from './data/questions';
 
 window.parameters = parameters;
 
 const DOM = {
   app: document.getElementById('app'),
+  subtitles: document.getElementById('subtitles'),
 };
 
 const STATE = {
@@ -79,6 +85,7 @@ export default () => {
     year: new Date().getFullYear() * factor,
     background: 'white',
     play: false,
+    subtitles: false,
   });
 
   document.body.style.backgroundColor = STATE.background;
@@ -90,4 +97,16 @@ export default () => {
   draw(30, () => {
     render(STATE.year++);
   })();
+
+  if (!STATE.subtitles) return;
+
+  questions.reduce((memo, question) => {
+    timeout(() => {
+      DOM.subtitles.innerText = question;
+    }, memo);
+
+    memo += length(question).time * 2;
+
+    return memo;
+  }, 0);
 };
