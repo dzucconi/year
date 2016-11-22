@@ -4,6 +4,7 @@ import throttle from 'lodash.throttle';
 import max from './lib/max';
 import { on, off } from './lib/events';
 import rand from './lib/rand';
+import draw from './lib/draw';
 
 window.parameters = parameters;
 
@@ -74,9 +75,19 @@ const render = year => {
 export default () => {
   const factor = Math.ceil(rand(0, 10));
 
-  const { year } = parameters({
+  const STATE = parameters({
     year: new Date().getFullYear() * factor,
+    background: 'white',
+    play: false,
   });
 
-  render(year);
+  document.body.style.backgroundColor = STATE.background;
+
+  render(STATE.year);
+
+  if (!STATE.play) return;
+
+  draw(30, () => {
+    render(STATE.year++);
+  })();
 };
