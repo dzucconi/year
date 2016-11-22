@@ -18,12 +18,8 @@ body,
 input {
   -webkit-font-smoothing: antialiased;
   font-size: 40px;
-  background-color: white;
   color: brown;
-  font-family: -apple-system, BlinkMacSystemFont,
-    'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans',
-    'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Helvetica Neue', sans-serif;
 }
 
 body {
@@ -36,9 +32,16 @@ input {
   width: 4em;
   text-align: center;
   user-select: none;
+  background-color: inherit;
 }
   input:focus {
     outline: none;
+  }
+
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
   }
 
 .app {
