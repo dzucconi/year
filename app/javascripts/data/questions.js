@@ -40,7 +40,5 @@ export default [
   'What worries you most about the future?',
   'How do I not worry about the future?',
   'What are the most worrying unknowns?',
-  'What is the size of unknown unknowns?',
-  'What are the most valuable objects known and unknown?',
   '',
 ];
