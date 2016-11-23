@@ -92,21 +92,21 @@ export default () => {
 
   render(STATE.year);
 
-  if (!STATE.play) return;
+  if (STATE.play) {
+    draw(30, () => {
+      render(STATE.year++);
+    })();
+  }
 
-  draw(30, () => {
-    render(STATE.year++);
-  })();
+  if (STATE.subtitles) {
+    questions.reduce((memo, question) => {
+      timeout(() => {
+        DOM.subtitles.innerText = question;
+      }, memo);
 
-  if (!STATE.subtitles) return;
+      memo += length(question).time * 2;
 
-  questions.reduce((memo, question) => {
-    timeout(() => {
-      DOM.subtitles.innerText = question;
-    }, memo);
-
-    memo += length(question).time * 2;
-
-    return memo;
-  }, 0);
+      return memo;
+    }, 0);
+  }
 };
