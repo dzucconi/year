@@ -84,11 +84,13 @@ export default () => {
   const STATE = parameters({
     year: new Date().getFullYear() * factor,
     background: 'white',
+    color: 'red',
     play: false,
     subtitles: false,
   });
 
   document.body.style.backgroundColor = STATE.background;
+  document.body.style.color = STATE.color;
 
   render(STATE.year);
 

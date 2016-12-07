@@ -18,12 +18,12 @@ body,
 input {
   -webkit-font-smoothing: antialiased;
   font-size: 40px;
-  color: brown;
   font-family: 'Helvetica Neue', sans-serif;
 }
 
 body {
   padding: 2em;
+  color: red;
 }
 
 input {
@@ -33,6 +33,8 @@ input {
   text-align: center;
   user-select: none;
   background-color: inherit;
+  filter: grayscale(50%);
+  color: inherit;
 }
   input:focus {
     outline: none;
@@ -72,13 +74,14 @@ input {
   display: inline-block;
   width: 2em;
   opacity: 0.1;
+  filter: grayscale(50%);
 }
   .day--zero {
     opacity: 0;
   }
   .day:first-child,
   .day:last-child {
-    color: red;
+    filter: grayscale(0%);
   }
 
 .subtitles {
