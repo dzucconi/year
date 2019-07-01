@@ -2,23 +2,21 @@ module.exports = {
   files: {
     javascripts: {
       joinTo: {
-        'vendor.js': /^(?!app)/,
-        'app.js': /^app/
+        "vendor.js": /^(?!app)/,
+        "app.js": /^app/
       }
     },
     stylesheets: {
-      joinTo: 'app.css'
+      joinTo: "app.css"
     }
   },
 
   plugins: {
     babel: {
-      presets: ['es2015']
+      presets: ["@babel/preset-env"]
     },
     postcss: {
-      processors: [
-        require('autoprefixer')(['last 8 versions'])
-      ]
+      processors: [require("autoprefixer")(["last 8 versions"])]
     },
     digest: {
       pattern: /DIGEST\(\/?([^\)]*)\)/g,
@@ -26,9 +24,9 @@ module.exports = {
       referenceFiles: /\.html$/,
       precision: 8,
       alwaysRun: false,
-      environments: ['production'],
+      environments: ["production"],
       prependHost: null,
-      manifest: '',
+      manifest: "",
       infixes: []
     }
   }
