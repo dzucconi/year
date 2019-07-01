@@ -12,9 +12,19 @@ When you schedule something with someone else, there's the ritual overlaying of 
 
 ## Meta
 
-* **State**: production
-* **Production**:
-  * **URL**: https://year.work.damonzucconi.com/
-  * **URL**: https://damonzucconi-year.netlify.com/
-* **Host**: https://app.netlify.com/sites/damonzucconi-year/overview
-* **Deploys**: Merged PRs to `dzucconi/year#master` are automatically deployed to production. [Manually trigger a deploy](https://app.netlify.com/sites/damonzucconi-year/deploys?filter=master)
+- **State**: production
+- **Production**:
+  - **URL**: https://year.work.damonzucconi.com/
+  - **URL**: https://damonzucconi-year.netlify.com/
+- **Host**: https://app.netlify.com/sites/damonzucconi-year/overview
+- **Deploys**: Merged PRs to `dzucconi/year#master` are automatically deployed to production. [Manually trigger a deploy](https://app.netlify.com/sites/damonzucconi-year/deploys?filter=master)
+
+## Parameters
+
+| Param        | Description                                            | Type         |
+| ------------ | ------------------------------------------------------ | ------------ |
+| `year`       | Year to begin at                                       | `number`     |
+| `background` | Background color                                       | `html color` |
+| `color`      | Text color                                             | `html color` |
+| `play`       | Automatically start "playback"                         | `boolean`    |
+| `subtitles`  | Include random subtitles from Quora topic "The Future" | `boolean`    |
