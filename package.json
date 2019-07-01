@@ -35,7 +35,7 @@
   "dependencies": {
     "calendar": "0.1.0",
     "lodash.throttle": "4.1.1",
-    "queryparams": "0.0.6",
+    "queryparams": "0.1.0",
     "reading-time": "1.2.0",
     "throttle": "1.0.3"
   }
