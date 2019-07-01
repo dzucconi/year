@@ -24,7 +24,7 @@
     "clean-css-brunch": "2.10.0",
     "css-brunch": "2.10.0",
     "digest-brunch": "1.6.0",
-    "eslint": "3.19.0",
+    "eslint": "4.18.2",
     "javascript-brunch": "2.10.0",
     "mocha": "3.5.3",
     "postcss-brunch": "2.10.1",
