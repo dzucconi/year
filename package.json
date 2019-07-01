@@ -26,7 +26,7 @@
     "digest-brunch": "1.6.0",
     "eslint": "4.18.2",
     "javascript-brunch": "2.10.0",
-    "mocha": "3.5.3",
+    "mocha": "6.1.4",
     "postcss-brunch": "2.10.1",
     "s3-cli": "0.13.0",
     "should": "11.2.1",
