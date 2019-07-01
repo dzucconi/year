@@ -1,2 +1,1 @@
-export default (i, limit) =>
-  i + 1 < limit ? i + 1 : 0;
+export default (i, limit) => (i + 1 < limit ? i + 1 : 0);

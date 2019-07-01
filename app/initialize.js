@@ -1,3 +1,3 @@
-import init from './javascripts/index';
+import init from "./javascripts/index";
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener("DOMContentLoaded", init);
