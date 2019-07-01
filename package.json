@@ -8,7 +8,6 @@
     "url": "https://github.com/dzucconi/year"
   },
   "scripts": {
-    "test": "mocha test",
     "start": "brunch watch --server",
     "prod": "brunch build --production",
     "sync": "s3-cli --config .s3config sync --delete-removed --acl-public public/ s3://work.damonzucconi.com/$npm_package_name",
@@ -26,10 +25,8 @@
     "digest-brunch": "1.6.0",
     "eslint": "6.0.1",
     "javascript-brunch": "2.10.0",
-    "mocha": "6.1.4",
     "postcss-brunch": "2.10.1",
     "s3-cli": "0.13.0",
-    "should": "13.2.3",
     "uglify-js-brunch": "2.10.0"
   },
   "dependencies": {
