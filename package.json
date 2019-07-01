@@ -29,7 +29,7 @@
     "mocha": "3.5.3",
     "postcss-brunch": "2.10.1",
     "s3-cli": "0.13.0",
-    "should": "11.2.1",
+    "should": "13.2.3",
     "uglify-js-brunch": "2.10.0"
   },
   "dependencies": {
