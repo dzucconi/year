@@ -1,4 +1,4 @@
-# year
+# Year
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/2f96de23-ea35-4e2c-b6c9-f41b41f86dfb/deploy-status)](https://app.netlify.com/sites/damonzucconi-year/deploys)
 
