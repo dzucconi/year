@@ -14,7 +14,7 @@
     "deploy": "npm run prod && npm run sync"
   },
   "devDependencies": {
-    "@babel/preset-env": "7.4.5",
+    "@babel/preset-env": "7.5.0",
     "auto-reload-brunch": "2.7.1",
     "autoprefixer": "9.6.0",
     "babel-brunch": "7.0.1",
