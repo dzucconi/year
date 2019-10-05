@@ -16,7 +16,7 @@
   "devDependencies": {
     "@babel/preset-env": "7.6.2",
     "auto-reload-brunch": "2.7.1",
-    "autoprefixer": "9.6.2",
+    "autoprefixer": "9.6.3",
     "babel-brunch": "7.0.1",
     "babel-core": "6.26.3",
     "brunch": "2.10.17",
