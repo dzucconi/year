@@ -23,7 +23,7 @@
     "clean-css-brunch": "2.10.0",
     "css-brunch": "2.10.0",
     "digest-brunch": "1.6.0",
-    "eslint": "6.5.1",
+    "eslint": "6.6.0",
     "javascript-brunch": "2.10.0",
     "postcss-brunch": "2.10.1",
     "s3-cli": "0.13.0",
