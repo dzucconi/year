@@ -1540,10 +1540,10 @@ cache-base@^1.0.1:
     union-value "^1.0.0"
     unset-value "^1.0.0"
 
-calendar@0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/calendar/-/calendar-0.1.0.tgz#7e205fc6d7b5c24d7f76b2c35605bb9c2863680d"
-  integrity sha1-fiBfxte1wk1/drLDVgW7nChjaA0=
+calendar@0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/calendar/-/calendar-0.1.1.tgz#4678dbf192c516690f6cde20bb476140fd817463"
+  integrity sha512-CExn+MxSU1pCsjYiS+Cx8d1MtIZqezxRhpIu8odr1oqvYG/0C1m8lvehHxTl1FslgKbOD7Z5QuEcyk8sGgpZLQ==
 
 callsites@^3.0.0:
   version "3.1.0"
