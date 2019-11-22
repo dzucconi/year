@@ -1,5 +1,6 @@
 html {
   box-sizing: border-box;
+  font-size: 40px;
 }
 
 *,
@@ -14,56 +15,43 @@ body {
   padding: 0;
 }
 
-body,
-input {
-  -webkit-font-smoothing: antialiased;
-  font-size: 40px;
-  font-family: "Helvetica Neue", sans-serif;
-}
-
 body {
   padding: 2em;
+  -webkit-font-smoothing: antialiased;
+  font-size: 1rem;
+  line-height: 1.2;
+  font-family: "Helvetica Neue", sans-serif;
   color: red;
-}
-
-input {
-  appearance: none;
-  border: none;
-  width: 4em;
-  text-align: center;
   user-select: none;
-  background-color: inherit;
-  filter: grayscale(50%);
-  color: inherit;
-}
-input:focus {
-  outline: none;
-}
-
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  appearance: none;
-  margin: 0;
 }
 
 .app {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  text-align: center;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
 }
 
 .months {
-  margin: 1em auto;
+  margin: 1rem auto;
   position: relative;
-  text-align: left;
+  /* font-size * line-height * 6 rows */
+  height: calc(1rem * 1.2 * 6);
+  width: auto;
 }
 
 .month {
   position: absolute;
   top: 0;
   left: 0;
+}
+.month:first-of-type {
+  position: relative;
 }
 
 .week {
@@ -89,31 +77,28 @@ input[type="number"]::-webkit-outer-spin-button {
   right: 0;
   bottom: 0;
   left: 0;
-  padding: 1em 3em;
+  padding: 1rem 3rem;
   text-align: center;
   font-size: 80%;
-  color: yellow;
-  text-shadow: 0 0 5px black, 0 0 5px black;
+  color: gold;
 }
 
 @media (max-width: 800px) {
-  body {
-    padding: 1.5em;
+  html {
+    font-size: 30px;
   }
 
-  body,
-  input {
-    font-size: 30px;
+  body {
+    padding: 1.5rem;
   }
 }
 
 @media (max-width: 600px) {
-  body {
-    padding: 1em;
+  html {
+    font-size: 16px;
   }
 
-  body,
-  input {
-    font-size: 16px;
+  body {
+    padding: 1rem;
   }
 }

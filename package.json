@@ -12,14 +12,12 @@
     "build": "parcel build src/index.html"
   },
   "devDependencies": {
-    "eslint": "6.6.0",
     "parcel": "1.12.4"
   },
   "dependencies": {
     "calendar": "0.1.1",
-    "lodash.throttle": "4.1.1",
+    "frame-interval": "^0.0.2",
     "queryparams": "0.1.0",
-    "reading-time": "1.2.0",
-    "throttle": "1.0.3"
+    "reading-time": "1.2.0"
   }
 }
