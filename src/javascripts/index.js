@@ -96,7 +96,7 @@ const render = year => {
   STATE.rendered = true;
 };
 
-export default () => {
+const init = () => {
   const factor = Math.ceil(rand(0, 10));
 
   const STATE = parameters({
@@ -130,3 +130,5 @@ export default () => {
     }, 0);
   }
 };
+
+document.addEventListener("DOMContentLoaded", init);

@@ -8,26 +8,12 @@
     "url": "https://github.com/dzucconi/year"
   },
   "scripts": {
-    "start": "brunch watch --server",
-    "prod": "brunch build --production",
-    "sync": "s3-cli --config .s3config sync --delete-removed --acl-public public/ s3://work.damonzucconi.com/$npm_package_name",
-    "deploy": "npm run prod && npm run sync"
+    "start": "parcel src/index.html --open",
+    "build": "parcel build src/index.html"
   },
   "devDependencies": {
-    "@babel/preset-env": "7.7.1",
-    "auto-reload-brunch": "2.7.1",
-    "autoprefixer": "9.7.2",
-    "babel-brunch": "7.0.1",
-    "babel-core": "6.26.3",
-    "brunch": "2.10.17",
-    "clean-css-brunch": "2.10.0",
-    "css-brunch": "2.10.0",
-    "digest-brunch": "1.6.0",
     "eslint": "6.6.0",
-    "javascript-brunch": "2.10.0",
-    "postcss-brunch": "2.10.1",
-    "s3-cli": "0.13.0",
-    "uglify-js-brunch": "2.10.0"
+    "parcel": "1.12.4"
   },
   "dependencies": {
     "calendar": "0.1.1",

@@ -18,7 +18,7 @@ body,
 input {
   -webkit-font-smoothing: antialiased;
   font-size: 40px;
-  font-family: 'Helvetica Neue', sans-serif;
+  font-family: "Helvetica Neue", sans-serif;
 }
 
 body {
@@ -36,15 +36,15 @@ input {
   filter: grayscale(50%);
   color: inherit;
 }
-  input:focus {
-    outline: none;
-  }
+input:focus {
+  outline: none;
+}
 
-  input[type=number]::-webkit-inner-spin-button,
-  input[type=number]::-webkit-outer-spin-button {
-    appearance: none;
-    margin: 0;
-  }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
 
 .app {
   position: fixed;
@@ -76,13 +76,13 @@ input {
   opacity: 0.1;
   filter: grayscale(50%);
 }
-  .day--zero {
-    opacity: 0;
-  }
-  .day:first-child,
-  .day:last-child {
-    filter: grayscale(0%);
-  }
+.day--zero {
+  opacity: 0;
+}
+.day:first-child,
+.day:last-child {
+  filter: grayscale(0%);
+}
 
 .subtitles {
   position: fixed;
