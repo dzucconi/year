@@ -1,4 +1,4 @@
-export default (fn, interval) => {
+export const timeout = (fn, interval) => {
   let now, delta;
 
   const then = Date.now();

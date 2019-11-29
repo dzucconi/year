@@ -1,4 +1,4 @@
-export default [
+export const questions = [
   "What will life be like 50 years from now?",
   "What will the world be like 1,000 years from now?",
   "What will the world be like in millions of years?",

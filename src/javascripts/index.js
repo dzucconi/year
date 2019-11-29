@@ -3,10 +3,10 @@ import parameters from "queryparams";
 import length from "reading-time";
 import fps from "frame-interval";
 
-import rand from "./lib/rand";
-import timeout from "./lib/timeout";
-
-import questions from "./data/questions";
+import { rand } from "./lib/rand";
+import { timeout } from "./lib/timeout";
+import { randomColor } from "./lib/randomColor";
+import { questions } from "./data/questions";
 
 window.parameters = parameters;
 
@@ -15,7 +15,7 @@ const DOM = {
   subtitles: document.getElementById("subtitles")
 };
 
-const factor = Math.ceil(rand(0, 10));
+const factor = rand(1, 10);
 
 const PARAMS = parameters({
   year: new Date().getFullYear() * factor,
@@ -78,8 +78,10 @@ const render = year => {
 };
 
 const init = () => {
-  document.body.style.backgroundColor = PARAMS.background;
-  document.body.style.color = PARAMS.color;
+  document.body.style.backgroundColor =
+    PARAMS.background === "random" ? randomColor() : PARAMS.background;
+  document.body.style.color =
+    PARAMS.color === "random" ? randomColor() : PARAMS.color;
 
   render(STATE.year);
 
