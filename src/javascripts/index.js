@@ -23,7 +23,8 @@ const PARAMS = parameters({
   color: "red",
   play: false,
   subtitles: false,
-  fps: 12
+  fps: 12,
+  refreshIntervalSeconds: 3600
 });
 
 const STATE = {
@@ -35,12 +36,9 @@ const render = year => {
   if (year >= 199999) STATE.year = 1970;
 
   const calendar = new Calendar();
-
   const months = Array(12)
     .fill(undefined)
-    .map((_, month) => {
-      return calendar.monthDays(year, month);
-    });
+    .map((_, month) => calendar.monthDays(year, month));
 
   DOM.app.innerHTML = `
     <div class='year'>
@@ -82,6 +80,10 @@ const init = () => {
     PARAMS.background === "random" ? randomColor() : PARAMS.background;
   document.body.style.color =
     PARAMS.color === "random" ? randomColor() : PARAMS.color;
+
+  if (PARAMS.refreshIntervalSeconds) {
+    setTimeout(() => location.reload(), PARAMS.refreshIntervalSeconds * 1000);
+  }
 
   render(STATE.year);
 

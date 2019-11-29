@@ -21,11 +21,12 @@ When you schedule something with someone else, there's the ritual overlaying of 
 
 ## Parameters
 
-| Param        | Description                                            | Type         | Default   |
-| ------------ | ------------------------------------------------------ | ------------ | --------- |
-| `year`       | Year to begin at                                       | `number`     | `*`       |
-| `background` | Background color                                       | `html color` | `'white'` |
-| `color`      | Text color                                             | `html color` | `'red'`   |
-| `play`       | Automatically start "playback"                         | `boolean`    | `false`   |
-| `subtitles`  | Include random subtitles from Quora topic "The Future" | `boolean`    | `false`   |
-| `fps`        | Target frames-per-second                               | `number`     | `12`      |
+| Param                    | Description                                                  | Type                    | Default   |
+| ------------------------ | ------------------------------------------------------------ | ----------------------- | --------- |
+| `year`                   | Year to begin at                                             | `number`                | `*`       |
+| `background`             | Background color                                             | `html color | "random"` | `'white'` |
+| `color`                  | Text color                                                   | `html color | "random"` | `'red'`   |
+| `play`                   | Automatically start "playback"                               | `boolean`               | `false`   |
+| `subtitles`              | Include random subtitles from Quora topic "The Future"       | `boolean`               | `false`   |
+| `fps`                    | Target frames-per-second                                     | `number`                | `12`      |
+| `refreshIntervalSeconds` | If present, refresh after this amount of seconds has elapsed | `number`                | `3600`    |
