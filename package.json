@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "calendar": "0.1.1",
-    "frame-interval": "0.0.2",
+    "frame-interval": "1.0.47",
     "queryparams": "0.1.0",
     "reading-time": "1.2.0"
   }
