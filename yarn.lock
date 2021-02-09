@@ -2252,10 +2252,10 @@ fragment-cache@^0.2.1:
   dependencies:
     map-cache "^0.2.2"
 
-frame-interval@0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/frame-interval/-/frame-interval-0.0.2.tgz#f1ea7552fd1c096dbe1629f5f967fe410ab198bf"
-  integrity sha1-8ep1Uv0cCW2+Fin1+Wf+QQqxmL8=
+frame-interval@1.0.47:
+  version "1.0.47"
+  resolved "https://registry.yarnpkg.com/frame-interval/-/frame-interval-1.0.47.tgz#a02fc3b2c59065cc54194266d1f2822547aefe77"
+  integrity sha512-LYTH6VMF3NiS15GW6rMd2+mNsnnSpcDSZUyfH0BksL1k4CctWgXoxemftd19BfuQRYna+ly+DN8iFBez2T70aA==
 
 fresh@0.5.2:
   version "0.5.2"
