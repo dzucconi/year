@@ -1,0 +1,106 @@
+.mode-stacked {
+  overflow: hidden;
+  user-select: none;
+}
+
+.mode-stacked #app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.stacked-calendar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 40px;
+  line-height: 1.2;
+}
+
+.stacked-calendar .calendar-year__heading {
+  min-height: 1.2em;
+}
+
+.stacked-calendar .calendar-year__months {
+  position: relative;
+  width: 14em;
+  height: 7.2em;
+  margin: 1em auto;
+}
+
+.stacked-calendar .calendar-month {
+  position: absolute;
+  inset: 0;
+}
+
+.stacked-calendar .calendar-month__grid {
+  position: relative;
+}
+
+.stacked-calendar .calendar-day {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 2em;
+  opacity: 0.1;
+  filter: grayscale(50%);
+  text-align: center;
+  will-change: transform;
+}
+
+.stacked-calendar
+  .calendar-month[data-start="0"]
+  .calendar-day:nth-child(7n + 1),
+.stacked-calendar
+  .calendar-month[data-start="0"]
+  .calendar-day:nth-child(7n + 7),
+.stacked-calendar
+  .calendar-month[data-start="1"]
+  .calendar-day:nth-child(7n + 7),
+.stacked-calendar
+  .calendar-month[data-start="1"]
+  .calendar-day:nth-child(7n + 6),
+.stacked-calendar
+  .calendar-month[data-start="2"]
+  .calendar-day:nth-child(7n + 6),
+.stacked-calendar
+  .calendar-month[data-start="2"]
+  .calendar-day:nth-child(7n + 5),
+.stacked-calendar
+  .calendar-month[data-start="3"]
+  .calendar-day:nth-child(7n + 5),
+.stacked-calendar
+  .calendar-month[data-start="3"]
+  .calendar-day:nth-child(7n + 4),
+.stacked-calendar
+  .calendar-month[data-start="4"]
+  .calendar-day:nth-child(7n + 4),
+.stacked-calendar
+  .calendar-month[data-start="4"]
+  .calendar-day:nth-child(7n + 3),
+.stacked-calendar
+  .calendar-month[data-start="5"]
+  .calendar-day:nth-child(7n + 3),
+.stacked-calendar
+  .calendar-month[data-start="5"]
+  .calendar-day:nth-child(7n + 2),
+.stacked-calendar
+  .calendar-month[data-start="6"]
+  .calendar-day:nth-child(7n + 2),
+.stacked-calendar
+  .calendar-month[data-start="6"]
+  .calendar-day:nth-child(7n + 1) {
+  filter: grayscale(0%);
+}
+
+@media (max-width: 800px) {
+  .stacked-calendar {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 600px) {
+  .stacked-calendar {
+    font-size: 16px;
+  }
+}

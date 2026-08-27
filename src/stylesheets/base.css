@@ -1,0 +1,65 @@
+:root {
+  color-scheme: light dark;
+  --background: white;
+  --foreground: red;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+}
+
+.is-pointer-idle,
+.is-pointer-idle * {
+  cursor: none !important;
+}
+
+.subtitles {
+  position: fixed;
+  z-index: 10;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 1em 3em;
+  color: #ff0;
+  font-size: 32px;
+  text-align: center;
+  text-shadow:
+    0 0 5px #000,
+    0 0 5px #000;
+  pointer-events: none;
+}
+
+@media (max-width: 800px) {
+  .subtitles {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .subtitles {
+    font-size: 12.8px;
+  }
+}
