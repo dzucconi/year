@@ -130,11 +130,9 @@
   right: 0.15rem;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .is-pointer-idle .scroll-playback:not(:focus-visible) {
-    opacity: 0;
-    pointer-events: none;
-  }
+.is-pointer-idle .scroll-playback:not(:focus-visible) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
