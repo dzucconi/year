@@ -57,13 +57,13 @@ export const scrollDistance = (
   elapsedMilliseconds: number,
 ): number => pixelsPerSecond * (elapsedMilliseconds / 1_000);
 
-const SWIPE_TAU_MIN = 255;
-const SWIPE_TAU_RANGE = 85;
-const SWIPE_DURATION_FACTOR_MIN = 3.05;
-const SWIPE_DURATION_FACTOR_RANGE = 1.35;
-const SWIPE_OVERLAP_CHANCE = 0.4;
-const SWIPE_OVERLAP_PROGRESS_MIN = 0.46;
-const SWIPE_OVERLAP_PROGRESS_RANGE = 0.36;
+export const IOS_NORMAL_DECELERATION_RATE = 0.998;
+const SWIPE_DECELERATION_VARIATION = 0.00012;
+const SWIPE_REMAINING_VELOCITY_MIN = 0.0015;
+const SWIPE_REMAINING_VELOCITY_RANGE = 0.0035;
+const SWIPE_OVERLAP_CHANCE = 0.32;
+const SWIPE_OVERLAP_PROGRESS_MIN = 0.62;
+const SWIPE_OVERLAP_PROGRESS_RANGE = 0.26;
 const SWIPE_PAUSE_CHANCE = 0.44;
 const SWIPE_PAUSE_MIN = 35;
 const SWIPE_PAUSE_RANGE = 220;
@@ -77,15 +77,25 @@ export type InertialSwipe = Readonly<{
   duration: number;
   nextAt: number;
   distance: number;
-  tau: number;
+  decelerationRate: number;
 }>;
 
-const swipeCurve = (elapsed: number, duration: number, tau: number): number => {
+const swipeCurve = (
+  elapsed: number,
+  duration: number,
+  decelerationRate: number,
+): number => {
   const t = Math.min(duration, Math.max(0, elapsed));
-  const travelled = 1 - Math.exp(-t / tau);
-  const total = 1 - Math.exp(-duration / tau);
+  const travelled = 1 - decelerationRate ** t;
+  const total = 1 - decelerationRate ** duration;
   return travelled / total;
 };
+
+export const deceleratedVelocity = (
+  velocity: number,
+  elapsedMilliseconds: number,
+  decelerationRate = IOS_NORMAL_DECELERATION_RATE,
+): number => velocity * decelerationRate ** Math.max(0, elapsedMilliseconds);
 
 const swipeGap = (random: () => number, duration: number): number => {
   const roll = random();
@@ -110,13 +120,16 @@ export const createInertialSwipe = (
   pixelsPerSecond: number,
   random: () => number,
 ): InertialSwipe => {
-  const tau = SWIPE_TAU_MIN + random() * SWIPE_TAU_RANGE;
-  const duration =
-    tau * (SWIPE_DURATION_FACTOR_MIN + random() * SWIPE_DURATION_FACTOR_RANGE);
+  const decelerationRate =
+    IOS_NORMAL_DECELERATION_RATE +
+    (random() * 2 - 1) * SWIPE_DECELERATION_VARIATION;
+  const remainingVelocity =
+    SWIPE_REMAINING_VELOCITY_MIN + random() * SWIPE_REMAINING_VELOCITY_RANGE;
+  const duration = Math.log(remainingVelocity) / Math.log(decelerationRate);
   const gap = swipeGap(random, duration);
   const distanceFactor = SWIPE_DISTANCE_MIN + random() * SWIPE_DISTANCE_RANGE;
   const interval = duration + gap;
-  const travelled = swipeCurve(interval, duration, tau);
+  const travelled = swipeCurve(interval, duration, decelerationRate);
   const distance =
     (scrollDistance(pixelsPerSecond, interval) * distanceFactor) / travelled;
   return {
@@ -124,7 +137,7 @@ export const createInertialSwipe = (
     duration,
     nextAt: startedAt + interval,
     distance,
-    tau,
+    decelerationRate,
   };
 };
 
@@ -133,7 +146,11 @@ export const inertialSwipePosition = (
   timestamp: number,
 ): number =>
   swipe.distance *
-  swipeCurve(timestamp - swipe.startedAt, swipe.duration, swipe.tau);
+  swipeCurve(
+    timestamp - swipe.startedAt,
+    swipe.duration,
+    swipe.decelerationRate,
+  );
 
 export type AccumulatedScroll = Readonly<{
   pixels: number;

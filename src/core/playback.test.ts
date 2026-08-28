@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   accumulateScroll,
   createInertialSwipe,
+  deceleratedVelocity,
   inertialSwipePosition,
   normalizeScrollPosition,
   scrollDistance,
@@ -50,10 +51,10 @@ describe("playback", () => {
     const values = [0.25, 0.75, 0.5, 0.25];
     const swipe = createInertialSwipe(1_000, 20, () => values.shift() ?? 0);
     expect(swipe.startedAt).toBe(1_000);
-    expect(swipe.tau).toBeCloseTo(276.25);
-    expect(swipe.duration).toBeCloseTo(1_122.265625);
-    expect(swipe.nextAt).toBeCloseTo(2_207.266);
-    expect(swipe.distance).toBeCloseTo(21.429);
+    expect(swipe.decelerationRate).toBeCloseTo(0.99794);
+    expect(swipe.duration).toBeCloseTo(2_662.637);
+    expect(swipe.nextAt).toBeCloseTo(3_787.637);
+    expect(swipe.distance).toBeCloseTo(49.481);
   });
 
   it("uses a longer glance pause on some flicks", () => {
@@ -75,12 +76,12 @@ describe("playback", () => {
   it("throws then coasts like an iPhone flick", () => {
     const forward = {
       startedAt: 0,
-      duration: 1_000,
-      nextAt: 1_200,
+      duration: 3_000,
+      nextAt: 3_200,
       distance: 100,
-      tau: 300,
+      decelerationRate: 0.998,
     };
-    const positions = [0, 250, 500, 750, 1_000].map((timestamp) =>
+    const positions = [0, 750, 1_500, 2_250, 3_000].map((timestamp) =>
       inertialSwipePosition(forward, timestamp),
     );
     const increments = positions.slice(1).map((position, index) => {
@@ -90,12 +91,19 @@ describe("playback", () => {
     });
     expect(positions.at(-1)).toBeCloseTo(100);
     expect(positions[1] ?? 0).toBeGreaterThan(50);
+    expect(positions[2] ?? 100).toBeLessThan(96);
     expect(increments[0]).toBeGreaterThan(increments[1] ?? 0);
     expect(increments[1]).toBeGreaterThan(increments[2] ?? 0);
     expect(increments[2]).toBeGreaterThan(increments[3] ?? 0);
     expect(
       inertialSwipePosition({ ...forward, distance: -100 }, 500),
     ).toBeLessThan(0);
+  });
+
+  it("uses UIKit's normal per-millisecond velocity decay", () => {
+    expect(deceleratedVelocity(1, 500)).toBeCloseTo(0.3675, 3);
+    expect(deceleratedVelocity(1, 1_000)).toBeCloseTo(0.1351, 3);
+    expect(deceleratedVelocity(-1, 1_000)).toBeCloseTo(-0.1351, 3);
   });
 
   it("accumulates sub-pixel scroll in either direction", () => {

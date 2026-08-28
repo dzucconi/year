@@ -10,6 +10,7 @@ import type { ScrollConfig } from "../core/config.ts";
 import { startSharedEffects } from "../core/effects.ts";
 import {
   createInertialSwipe,
+  deceleratedVelocity,
   inertialSwipePosition,
   normalizeScrollPosition,
   type InertialSwipe,
@@ -18,8 +19,7 @@ import { randomFor } from "../core/random.ts";
 
 const VIEW_COUNT = 5;
 const ANCHOR_INDEX = 2;
-const MANUAL_DECAY = 325;
-const MANUAL_STOP_VELOCITY = 0.015;
+const MANUAL_STOP_VELOCITY = 0.006;
 const SCROLL_KEYS = new Set([
   "ArrowDown",
   "ArrowUp",
@@ -223,7 +223,7 @@ export const startScrollMode = (
       previousFrameTimestamp = timestamp;
       if (elapsed > 0) {
         moveBy(manualVelocity * elapsed);
-        manualVelocity *= Math.exp(-elapsed / MANUAL_DECAY);
+        manualVelocity = deceleratedVelocity(manualVelocity, elapsed);
       }
       if (Math.abs(manualVelocity) < MANUAL_STOP_VELOCITY) {
         manualVelocity = 0;
