@@ -1,4 +1,4 @@
-export const questions = [
+export const QUESTIONS = [
   "What will life be like 50 years from now?",
   "What will the world be like 1,000 years from now?",
   "What will the world be like in millions of years?",
@@ -40,5 +40,4 @@ export const questions = [
   "What worries you most about the future?",
   "How do I not worry about the future?",
   "What are the most worrying unknowns?",
-  ""
-];
+] as const;
