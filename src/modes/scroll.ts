@@ -18,6 +18,7 @@ import {
 const NATIVE_SCROLL_RANGE = 1_000_000;
 const NATIVE_SCROLL_IDLE_MILLISECONDS = 120;
 const YEAR_SYNC_INTERVAL_MILLISECONDS = 500;
+const INITIAL_AUTOPLAY_DELAY_MILLISECONDS = 750;
 const SCROLL_KEYS = new Set([
   "ArrowDown",
   "ArrowUp",
@@ -192,7 +193,11 @@ export const startScrollMode = (
     wakeTimer = undefined;
   };
 
-  const setPlaying = (next: boolean, updateLocation = true): void => {
+  const setPlaying = (
+    next: boolean,
+    updateLocation = true,
+    delay = 0,
+  ): void => {
     playing = next && config.speed !== 0;
     swipe = undefined;
     swipePosition = 0;
@@ -203,7 +208,14 @@ export const startScrollMode = (
     }
     updateButton();
     if (updateLocation) replaceParameter("play", String(playing));
-    scheduleFrame();
+    if (playing && delay > 0) {
+      wakeTimer = window.setTimeout(() => {
+        wakeTimer = undefined;
+        scheduleFrame();
+      }, delay);
+    } else {
+      scheduleFrame();
+    }
   };
 
   function animate(timestamp: number): void {
@@ -346,6 +358,10 @@ export const startScrollMode = (
   );
 
   requestAnimationFrame(() =>
-    setPlaying(playing, reducedMotion && config.play),
+    setPlaying(
+      playing,
+      reducedMotion && config.play,
+      config.play ? INITIAL_AUTOPLAY_DELAY_MILLISECONDS : 0,
+    ),
   );
 };
