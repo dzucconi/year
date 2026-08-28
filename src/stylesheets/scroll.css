@@ -6,72 +6,57 @@
   text-rendering: auto;
 }
 
-.mode-scroll #app {
+.mode-scroll #app,
+.scroll-stage {
   height: 100dvh;
 }
 
-.scroll-viewport {
-  height: 100%;
+.scroll-stage {
+  position: relative;
   overflow: hidden;
+  background: var(--background);
+}
+
+.scroll-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  contain: strict;
+}
+
+.scroll-viewport {
+  position: absolute;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
   overscroll-behavior-y: contain;
-  touch-action: none;
+  scrollbar-width: none;
+  touch-action: pan-y;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-.scroll-window {
-  width: min(100%, 48rem);
-  margin: 0 auto;
-  backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
+.scroll-viewport::-webkit-scrollbar {
+  display: none;
 }
 
-.scroll-year {
-  padding: clamp(1.25rem, 4vw, 3rem) clamp(1.25rem, 6vw, 3rem);
-  contain: layout paint style;
+.scroll-track {
+  width: 1px;
+  overflow-anchor: none;
+  pointer-events: none;
 }
 
-.scroll-year .calendar-year__heading {
-  margin: 0;
-  font-size: clamp(2.25rem, 9vw, 3.75rem);
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1;
-}
-
-.scroll-year .calendar-year__rule {
-  margin: clamp(0.5rem, 1.5vw, 0.875rem) 0 clamp(0.75rem, 2.5vw, 1.5rem);
-  border: 0;
-  border-top: 1px solid color-mix(in srgb, var(--foreground) 25%, transparent);
-}
-
-.scroll-year .calendar-year__months {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(1.25rem, 4.5vw, 2.75rem) clamp(0.875rem, 3.5vw, 2rem);
-}
-
-.scroll-year .calendar-month__name {
-  margin: 0 0 0.42em;
-  font-size: clamp(1.1875rem, 4.8vw, 1.5rem);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1;
-}
-
-.scroll-year .calendar-month__grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-template-rows: repeat(6, 1.45em);
-  height: 8.7em;
-  font-size: clamp(0.625rem, 2.55vw, 0.875rem);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  line-height: 1.45;
-}
-
-.scroll-year .calendar-day {
-  text-align: center;
+.scroll-semantic {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .scroll-playback {
@@ -146,12 +131,6 @@
   right: 0.15rem;
 }
 
-@media (min-width: 700px) {
-  .scroll-year .calendar-month__grid {
-    font-size: clamp(0.75rem, 1.4vw, 0.875rem);
-  }
-}
-
 @media (hover: hover) and (pointer: fine) {
   .is-pointer-idle .scroll-playback:not(:focus-visible) {
     opacity: 0;
@@ -160,10 +139,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scroll-viewport {
-    scroll-behavior: auto;
-  }
-
   .scroll-playback {
     transition: none;
   }

@@ -17,41 +17,6 @@ export const stackedYearAt = (
       BigInt(Math.floor((elapsedMilliseconds * yearsPerSecond) / 1000)),
   );
 
-export type ScrollPosition = Readonly<{
-  anchorYear: bigint;
-  scrollTop: number;
-  progress: number;
-  yearsMoved: number;
-}>;
-
-export const normalizeScrollPosition = (
-  anchorYear: bigint,
-  scrollTop: number,
-  yearHeight: number,
-  anchorIndex: number,
-): ScrollPosition => {
-  if (!(yearHeight > 0)) {
-    return { anchorYear, scrollTop, progress: 0, yearsMoved: 0 };
-  }
-
-  const anchorTop = anchorIndex * yearHeight;
-  const rawYearsMoved = (scrollTop - anchorTop) / yearHeight;
-  const nearestBoundary = Math.round(rawYearsMoved);
-  const flooredYearsMoved = Math.floor(
-    Math.abs(rawYearsMoved - nearestBoundary) * yearHeight < 1
-      ? nearestBoundary
-      : rawYearsMoved,
-  );
-  const yearsMoved = flooredYearsMoved === 0 ? 0 : flooredYearsMoved;
-  const normalizedTop = scrollTop - yearsMoved * yearHeight;
-  return {
-    anchorYear: anchorYear + BigInt(yearsMoved),
-    scrollTop: normalizedTop,
-    progress: (normalizedTop - anchorTop) / yearHeight,
-    yearsMoved,
-  };
-};
-
 export const scrollDistance = (
   pixelsPerSecond: number,
   elapsedMilliseconds: number,
@@ -90,12 +55,6 @@ const swipeCurve = (
   const total = 1 - decelerationRate ** duration;
   return travelled / total;
 };
-
-export const deceleratedVelocity = (
-  velocity: number,
-  elapsedMilliseconds: number,
-  decelerationRate = IOS_NORMAL_DECELERATION_RATE,
-): number => velocity * decelerationRate ** Math.max(0, elapsedMilliseconds);
 
 const swipeGap = (random: () => number, duration: number): number => {
   const roll = random();
@@ -151,17 +110,3 @@ export const inertialSwipePosition = (
     swipe.duration,
     swipe.decelerationRate,
   );
-
-export type AccumulatedScroll = Readonly<{
-  pixels: number;
-  remainder: number;
-}>;
-
-export const accumulateScroll = (
-  remainder: number,
-  distance: number,
-): AccumulatedScroll => {
-  const total = remainder + distance;
-  const pixels = Math.trunc(total);
-  return { pixels, remainder: total - pixels };
-};

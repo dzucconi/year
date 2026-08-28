@@ -1,25 +1,23 @@
 import "../stylesheets/scroll.css";
 
-import {
-  createYearView,
-  updateYearView,
-  type YearView,
-} from "../core/calendar-view.ts";
-import { yearsAround } from "../core/calendar.ts";
+import { calendarForYear, formatYear } from "../core/calendar.ts";
 import type { ScrollConfig } from "../core/config.ts";
 import { startSharedEffects } from "../core/effects.ts";
 import {
   createInertialSwipe,
-  deceleratedVelocity,
   inertialSwipePosition,
-  normalizeScrollPosition,
   type InertialSwipe,
 } from "../core/playback.ts";
 import { randomFor } from "../core/random.ts";
+import {
+  createScrollCanvasRenderer,
+  moveScrollCursor,
+  type ScrollCanvasRenderer,
+} from "./scroll-canvas.ts";
 
-const VIEW_COUNT = 5;
-const ANCHOR_INDEX = 2;
-const MANUAL_STOP_VELOCITY = 0.006;
+const NATIVE_SCROLL_RANGE = 1_000_000;
+const NATIVE_SCROLL_IDLE_MILLISECONDS = 120;
+const YEAR_SYNC_INTERVAL_MILLISECONDS = 500;
 const SCROLL_KEYS = new Set([
   "ArrowDown",
   "ArrowUp",
@@ -28,13 +26,6 @@ const SCROLL_KEYS = new Set([
   "PageDown",
   "PageUp",
 ]);
-
-type Drag = {
-  readonly pointerId: number;
-  y: number;
-  timestamp: number;
-  velocity: number;
-};
 
 const replaceParameter = (key: string, value: string): void => {
   const url = new URL(window.location.href);
@@ -49,6 +40,31 @@ const isInteractive = (target: EventTarget | null): boolean =>
   target instanceof HTMLTextAreaElement ||
   target instanceof HTMLAnchorElement;
 
+type SemanticMonth = Readonly<{
+  heading: HTMLHeadingElement;
+  days: HTMLParagraphElement;
+}>;
+
+const createSemanticCalendar = (): Readonly<{
+  root: HTMLElement;
+  heading: HTMLHeadingElement;
+  months: readonly SemanticMonth[];
+}> => {
+  const root = document.createElement("section");
+  const heading = document.createElement("h1");
+  root.className = "scroll-semantic";
+  const months = Array.from({ length: 12 }, () => {
+    const article = document.createElement("article");
+    const monthHeading = document.createElement("h2");
+    const days = document.createElement("p");
+    article.append(monthHeading, days);
+    root.append(article);
+    return { heading: monthHeading, days };
+  });
+  root.prepend(heading);
+  return { root, heading, months };
+};
+
 export const startScrollMode = (
   app: HTMLElement,
   subtitles: HTMLElement,
@@ -56,19 +72,22 @@ export const startScrollMode = (
   signal: AbortSignal,
 ): void => {
   document.body.className = "mode-scroll";
+
+  const stage = document.createElement("div");
+  const canvas = document.createElement("canvas");
   const viewport = document.createElement("div");
+  const track = document.createElement("div");
+  const semantic = createSemanticCalendar();
+  stage.className = "scroll-stage";
+  canvas.className = "scroll-canvas";
+  canvas.setAttribute("aria-hidden", "true");
   viewport.className = "scroll-viewport";
   viewport.tabIndex = 0;
   viewport.setAttribute("aria-label", "Endless calendar");
-
-  const windowElement = document.createElement("div");
-  windowElement.className = "scroll-window";
-  const views: YearView[] = Array.from({ length: VIEW_COUNT }, () =>
-    createYearView(true),
-  );
-  views.forEach((view) => view.root.classList.add("scroll-year"));
-  windowElement.append(...views.map(({ root }) => root));
-  viewport.append(windowElement);
+  track.className = "scroll-track";
+  track.style.height = `${NATIVE_SCROLL_RANGE}px`;
+  viewport.append(track);
+  stage.append(canvas, viewport, semantic.root);
 
   const playback = document.createElement("button");
   const playbackIcon = document.createElement("span");
@@ -78,65 +97,80 @@ export const startScrollMode = (
   playbackIcon.className = "scroll-playback__icon";
   playbackIcon.setAttribute("aria-hidden", "true");
   playback.append(playbackIcon);
-  app.replaceChildren(viewport, playback);
+  app.replaceChildren(stage, playback);
 
-  let anchorYear = config.year;
-  let yearHeight = 0;
-  let position = 0;
-  let scrollIdleTimer: number | undefined;
+  let year = config.year;
+  let offset = 0;
+  let renderer: ScrollCanvasRenderer | undefined;
   let frame: number | undefined;
+  let paintFrame: number | undefined;
   let wakeTimer: number | undefined;
+  let yearSyncTimer: number | undefined;
+  let nativeScrollIdleTimer: number | undefined;
+  let nativeScrollPosition = 0;
   let swipe: InertialSwipe | undefined;
   let swipePosition = 0;
-  let drag: Drag | undefined;
-  let manualVelocity = 0;
-  let previousFrameTimestamp: number | undefined;
+  let lastSyncedYear: bigint | undefined;
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
   const motionRandom = randomFor(config.seed, "scroll-motion");
   let playing = config.play && config.speed !== 0 && !reducedMotion;
 
-  const renderWindow = (): void => {
-    const years = yearsAround(anchorYear, VIEW_COUNT);
-    views.forEach((view, index) => {
-      const year = years[index];
-      if (year === undefined) throw new Error(`Missing virtual year ${index}`);
-      updateYearView(view, year);
+  const updateSemanticCalendar = (): void => {
+    const calendar = calendarForYear(year);
+    const label = formatYear(year);
+    semantic.heading.textContent = label;
+    semantic.root.setAttribute("aria-label", `Year ${label}`);
+    viewport.setAttribute("aria-label", `Endless calendar, year ${label}`);
+    calendar.months.forEach((month, index) => {
+      const view = semantic.months[index];
+      if (view === undefined) return;
+      view.heading.textContent = month.name;
+      view.days.textContent = Array.from({ length: month.length }, (_, day) =>
+        String(day + 1),
+      ).join(", ");
     });
   };
 
-  const recycle = (yearsMoved: number): void => {
-    if (Math.abs(yearsMoved) >= VIEW_COUNT) {
-      anchorYear += BigInt(yearsMoved);
-      renderWindow();
-      return;
-    }
-
-    const direction = Math.sign(yearsMoved);
-    for (let index = 0; index < Math.abs(yearsMoved); index += 1) {
-      anchorYear += BigInt(direction);
-      if (direction > 0) {
-        const view = views.shift();
-        if (view === undefined) throw new Error("Missing leading year view");
-        views.push(view);
-        updateYearView(
-          view,
-          anchorYear + BigInt(VIEW_COUNT - ANCHOR_INDEX - 1),
-        );
-        windowElement.append(view.root);
-      } else {
-        const view = views.pop();
-        if (view === undefined) throw new Error("Missing trailing year view");
-        views.unshift(view);
-        updateYearView(view, anchorYear - BigInt(ANCHOR_INDEX));
-        windowElement.prepend(view.root);
-      }
-    }
+  const syncYear = (): void => {
+    yearSyncTimer = undefined;
+    if (year === lastSyncedYear) return;
+    lastSyncedYear = year;
+    updateSemanticCalendar();
+    replaceParameter("year", year.toString());
   };
 
-  const paintPosition = (): void => {
-    windowElement.style.transform = `translate3d(0, ${-position}px, 0)`;
+  const scheduleYearSync = (): void => {
+    if (yearSyncTimer !== undefined) return;
+    yearSyncTimer = window.setTimeout(
+      syncYear,
+      YEAR_SYNC_INTERVAL_MILLISECONDS,
+    );
+  };
+
+  const paint = (): void => renderer?.draw(year, offset);
+
+  const schedulePaint = (): void => {
+    if (paintFrame !== undefined) return;
+    paintFrame = requestAnimationFrame(() => {
+      paintFrame = undefined;
+      paint();
+    });
+  };
+
+  const moveBy = (pixels: number): boolean => {
+    if (renderer === undefined) return false;
+    const cursor = moveScrollCursor(
+      year,
+      offset,
+      pixels,
+      renderer.layout.yearHeight,
+    );
+    year = cursor.year;
+    offset = cursor.offset;
+    if (cursor.yearsMoved !== 0) scheduleYearSync();
+    return cursor.yearsMoved !== 0 || pixels !== 0;
   };
 
   const updateButton = (): void => {
@@ -149,11 +183,7 @@ export const startScrollMode = (
   };
 
   const scheduleFrame = (): void => {
-    if (
-      (playing || Math.abs(manualVelocity) >= MANUAL_STOP_VELOCITY) &&
-      frame === undefined
-    )
-      frame = requestAnimationFrame(animate);
+    if (playing && frame === undefined) frame = requestAnimationFrame(animate);
   };
 
   const clearWakeTimer = (): void => {
@@ -167,13 +197,7 @@ export const startScrollMode = (
     swipe = undefined;
     swipePosition = 0;
     clearWakeTimer();
-    previousFrameTimestamp = undefined;
-    if (playing) manualVelocity = 0;
-    if (
-      !playing &&
-      Math.abs(manualVelocity) < MANUAL_STOP_VELOCITY &&
-      frame !== undefined
-    ) {
+    if (!playing && frame !== undefined) {
       cancelAnimationFrame(frame);
       frame = undefined;
     }
@@ -182,63 +206,19 @@ export const startScrollMode = (
     scheduleFrame();
   };
 
-  const syncYear = (): void => replaceParameter("year", anchorYear.toString());
-
-  const scheduleYearSync = (): void => {
-    if (scrollIdleTimer !== undefined) window.clearTimeout(scrollIdleTimer);
-    scrollIdleTimer = window.setTimeout(syncYear, 150);
-  };
-
-  const moveBy = (pixels: number): void => {
-    if (!Number.isFinite(pixels) || pixels === 0 || yearHeight <= 0) return;
-    const normalized = normalizeScrollPosition(
-      anchorYear,
-      position + pixels,
-      yearHeight,
-      ANCHOR_INDEX,
-    );
-    if (normalized.yearsMoved !== 0) {
-      recycle(normalized.yearsMoved);
-      scheduleYearSync();
-    }
-    position = normalized.scrollTop;
-    paintPosition();
-  };
-
   function animate(timestamp: number): void {
     frame = undefined;
     if (signal.aborted) return;
-    if (document.hidden || yearHeight <= 0) {
+    if (document.hidden || renderer === undefined) {
       swipe = undefined;
       swipePosition = 0;
-      previousFrameTimestamp = undefined;
       return;
     }
-
-    if (Math.abs(manualVelocity) >= MANUAL_STOP_VELOCITY) {
-      const elapsed =
-        previousFrameTimestamp === undefined
-          ? 0
-          : Math.min(32, timestamp - previousFrameTimestamp);
-      previousFrameTimestamp = timestamp;
-      if (elapsed > 0) {
-        moveBy(manualVelocity * elapsed);
-        manualVelocity = deceleratedVelocity(manualVelocity, elapsed);
-      }
-      if (Math.abs(manualVelocity) < MANUAL_STOP_VELOCITY) {
-        manualVelocity = 0;
-        previousFrameTimestamp = undefined;
-      }
-      scheduleFrame();
-      return;
-    }
-
     if (!playing) return;
 
     if (swipe !== undefined && timestamp >= swipe.nextAt) {
-      if (swipe.nextAt >= swipe.startedAt + swipe.duration) {
+      if (swipe.nextAt >= swipe.startedAt + swipe.duration)
         moveBy(swipe.distance - swipePosition);
-      }
       swipe = undefined;
       swipePosition = 0;
     }
@@ -247,6 +227,8 @@ export const startScrollMode = (
     const nextPosition = inertialSwipePosition(swipe, timestamp);
     moveBy(nextPosition - swipePosition);
     swipePosition = nextPosition;
+    paint();
+
     const swipeEndsAt = swipe.startedAt + swipe.duration;
     if (timestamp >= swipeEndsAt && swipe.nextAt > timestamp) {
       wakeTimer = window.setTimeout(() => {
@@ -262,9 +244,29 @@ export const startScrollMode = (
     if (playing) setPlaying(false);
   };
 
-  const stopManualMotion = (): void => {
-    manualVelocity = 0;
-    previousFrameTimestamp = undefined;
+  const centerNativeScroll = (): void => {
+    const center = (viewport.scrollHeight - viewport.clientHeight) / 2;
+    nativeScrollPosition = center;
+    viewport.scrollTop = center;
+  };
+
+  const scheduleNativeScrollReset = (): void => {
+    if (nativeScrollIdleTimer !== undefined)
+      window.clearTimeout(nativeScrollIdleTimer);
+    nativeScrollIdleTimer = window.setTimeout(() => {
+      nativeScrollIdleTimer = undefined;
+      centerNativeScroll();
+    }, NATIVE_SCROLL_IDLE_MILLISECONDS);
+  };
+
+  const onScroll = (): void => {
+    const nextPosition = viewport.scrollTop;
+    const distance = nextPosition - nativeScrollPosition;
+    nativeScrollPosition = nextPosition;
+    if (distance === 0) return;
+    pauseFromInput();
+    if (moveBy(distance)) schedulePaint();
+    scheduleNativeScrollReset();
   };
 
   const keyDistance = (key: string): number => {
@@ -283,91 +285,44 @@ export const startScrollMode = (
     if (!SCROLL_KEYS.has(event.key) || isInteractive(event.target)) return;
     event.preventDefault();
     pauseFromInput();
-    stopManualMotion();
-    moveBy(keyDistance(event.key));
-  };
-
-  const onWheel = (event: WheelEvent): void => {
-    event.preventDefault();
-    pauseFromInput();
-    stopManualMotion();
-    const scale =
-      event.deltaMode === WheelEvent.DOM_DELTA_LINE
-        ? 16
-        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-          ? viewport.clientHeight
-          : 1;
-    moveBy(event.deltaY * scale);
-  };
-
-  const onPointerDown = (event: PointerEvent): void => {
-    if (
-      !event.isPrimary ||
-      (event.pointerType === "mouse" && event.button !== 0)
-    )
-      return;
-    pauseFromInput();
-    stopManualMotion();
-    drag = {
-      pointerId: event.pointerId,
-      y: event.clientY,
-      timestamp: event.timeStamp,
-      velocity: 0,
-    };
-    viewport.setPointerCapture(event.pointerId);
-  };
-
-  const onPointerMove = (event: PointerEvent): void => {
-    if (drag?.pointerId !== event.pointerId) return;
-    event.preventDefault();
-    const elapsed = Math.max(1, event.timeStamp - drag.timestamp);
-    const distance = drag.y - event.clientY;
-    drag.velocity = drag.velocity * 0.72 + (distance / elapsed) * 0.28;
-    drag.y = event.clientY;
-    drag.timestamp = event.timeStamp;
-    moveBy(distance);
-  };
-
-  const endPointer = (event: PointerEvent): void => {
-    if (drag?.pointerId !== event.pointerId) return;
-    manualVelocity = event.timeStamp - drag.timestamp < 100 ? drag.velocity : 0;
-    drag = undefined;
-    previousFrameTimestamp = undefined;
-    scheduleFrame();
+    if (moveBy(keyDistance(event.key))) schedulePaint();
   };
 
   const measure = (): void => {
-    const measuredHeight =
-      views[ANCHOR_INDEX]?.root.getBoundingClientRect().height ?? 0;
-    if (!(measuredHeight > 0) || measuredHeight === yearHeight) return;
-    const progress =
-      yearHeight > 0 ? (position - ANCHOR_INDEX * yearHeight) / yearHeight : 0;
-    yearHeight = measuredHeight;
-    swipe = undefined;
-    swipePosition = 0;
-    position = (ANCHOR_INDEX + progress) * yearHeight;
-    paintPosition();
+    const width = stage.clientWidth;
+    const height = stage.clientHeight;
+    if (!(width > 0) || !(height > 0)) return;
+    const previousHeight = renderer?.layout.yearHeight;
+    const progress = previousHeight === undefined ? 0 : offset / previousHeight;
+    const styles = getComputedStyle(document.documentElement);
+    renderer = createScrollCanvasRenderer(
+      canvas,
+      width,
+      height,
+      window.devicePixelRatio,
+      styles.backgroundColor,
+      styles.color,
+    );
+    offset = progress * renderer.layout.yearHeight;
+    paint();
   };
 
-  renderWindow();
   startSharedEffects(config, subtitles, signal);
+  updateSemanticCalendar();
+  lastSyncedYear = year;
   updateButton();
+  measure();
+  centerNativeScroll();
 
-  viewport.addEventListener("wheel", onWheel, { passive: false, signal });
-  viewport.addEventListener("pointerdown", onPointerDown, { signal });
-  viewport.addEventListener("pointermove", onPointerMove, {
-    passive: false,
-    signal,
-  });
-  viewport.addEventListener("pointerup", endPointer, { signal });
-  viewport.addEventListener("pointercancel", endPointer, { signal });
+  viewport.addEventListener("scroll", onScroll, { passive: true, signal });
+  viewport.addEventListener("wheel", pauseFromInput, { passive: true, signal });
+  viewport.addEventListener("pointerdown", pauseFromInput, { signal });
   window.addEventListener("keydown", onKeyDown, { signal });
   document.addEventListener(
     "visibilitychange",
     () => {
       swipe = undefined;
       swipePosition = 0;
-      stopManualMotion();
       if (!document.hidden) scheduleFrame();
     },
     { signal },
@@ -375,21 +330,22 @@ export const startScrollMode = (
   playback.addEventListener("click", () => setPlaying(!playing), { signal });
 
   const resizeObserver = new ResizeObserver(measure);
-  const measuredView = views[0];
-  if (measuredView !== undefined) resizeObserver.observe(measuredView.root);
+  resizeObserver.observe(stage);
   signal.addEventListener(
     "abort",
     () => {
       resizeObserver.disconnect();
       if (frame !== undefined) cancelAnimationFrame(frame);
+      if (paintFrame !== undefined) cancelAnimationFrame(paintFrame);
       clearWakeTimer();
-      if (scrollIdleTimer !== undefined) window.clearTimeout(scrollIdleTimer);
+      if (yearSyncTimer !== undefined) window.clearTimeout(yearSyncTimer);
+      if (nativeScrollIdleTimer !== undefined)
+        window.clearTimeout(nativeScrollIdleTimer);
     },
     { once: true },
   );
 
-  requestAnimationFrame(() => {
-    measure();
-    setPlaying(playing, reducedMotion && config.play);
-  });
+  requestAnimationFrame(() =>
+    setPlaying(playing, reducedMotion && config.play),
+  );
 };
