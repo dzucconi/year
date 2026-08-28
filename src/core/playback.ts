@@ -53,10 +53,59 @@ export const normalizeScrollPosition = (
 };
 
 export const scrollDistance = (
-  yearHeight: number,
-  yearsPerMinute: number,
+  pixelsPerSecond: number,
   elapsedMilliseconds: number,
-): number => yearHeight * yearsPerMinute * (elapsedMilliseconds / 60_000);
+): number => pixelsPerSecond * (elapsedMilliseconds / 1_000);
+
+const SWIPE_DURATION_MIN = 1_100;
+const SWIPE_DURATION_RANGE = 900;
+const SWIPE_PAUSE_MIN = 450;
+const SWIPE_PAUSE_RANGE = 1_750;
+const SWIPE_DISTANCE_MIN = 0.65;
+const SWIPE_DISTANCE_RANGE = 0.7;
+const SWIPE_DECELERATION_MIN = 0.9974;
+const SWIPE_DECELERATION_RANGE = 0.0012;
+
+export type InertialSwipe = Readonly<{
+  startedAt: number;
+  duration: number;
+  nextAt: number;
+  distance: number;
+  deceleration: number;
+}>;
+
+export const createInertialSwipe = (
+  startedAt: number,
+  pixelsPerSecond: number,
+  random: () => number,
+): InertialSwipe => {
+  const duration = SWIPE_DURATION_MIN + random() * SWIPE_DURATION_RANGE;
+  const pause = SWIPE_PAUSE_MIN + random() * SWIPE_PAUSE_RANGE;
+  const distanceFactor = SWIPE_DISTANCE_MIN + random() * SWIPE_DISTANCE_RANGE;
+  const deceleration =
+    SWIPE_DECELERATION_MIN + random() * SWIPE_DECELERATION_RANGE;
+  const interval = duration + pause;
+  return {
+    startedAt,
+    duration,
+    nextAt: startedAt + interval,
+    distance: scrollDistance(pixelsPerSecond, interval) * distanceFactor,
+    deceleration,
+  };
+};
+
+export const inertialSwipePosition = (
+  swipe: InertialSwipe,
+  timestamp: number,
+): number => {
+  const elapsed = Math.min(
+    swipe.duration,
+    Math.max(0, timestamp - swipe.startedAt),
+  );
+  const travelled = 1 - swipe.deceleration ** elapsed;
+  const total = 1 - swipe.deceleration ** swipe.duration;
+  return swipe.distance * (travelled / total);
+};
 
 export type AccumulatedScroll = Readonly<{
   pixels: number;

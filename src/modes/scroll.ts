@@ -10,9 +10,12 @@ import type { ScrollConfig } from "../core/config.ts";
 import { startSharedEffects } from "../core/effects.ts";
 import {
   accumulateScroll,
+  createInertialSwipe,
+  inertialSwipePosition,
   normalizeScrollPosition,
-  scrollDistance,
+  type InertialSwipe,
 } from "../core/playback.ts";
+import { randomFor } from "../core/random.ts";
 
 const VIEW_COUNT = 9;
 const ANCHOR_INDEX = 4;
@@ -73,12 +76,14 @@ export const startScrollMode = (
   let yearHeight = 0;
   let scrollIdleTimer: number | undefined;
   let frame: number | undefined;
-  let lastTimestamp: number | undefined;
   let scrollRemainder = 0;
+  let swipe: InertialSwipe | undefined;
+  let swipePosition = 0;
   let normalizing = false;
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
+  const motionRandom = randomFor(config.seed, "scroll-motion");
   let playing = config.play && config.speed !== 0 && !reducedMotion;
 
   const renderWindow = (): void => {
@@ -105,7 +110,8 @@ export const startScrollMode = (
 
   const setPlaying = (next: boolean, updateLocation = true): void => {
     playing = next && config.speed !== 0;
-    lastTimestamp = undefined;
+    swipe = undefined;
+    swipePosition = 0;
     if (!playing && frame !== undefined) {
       cancelAnimationFrame(frame);
       frame = undefined;
@@ -144,21 +150,48 @@ export const startScrollMode = (
     scheduleYearSync();
   };
 
+  const moveBy = (pixels: number): void => {
+    const position = normalizeScrollPosition(
+      anchorYear,
+      viewport.scrollTop + pixels,
+      yearHeight,
+      ANCHOR_INDEX,
+    );
+    normalizing = true;
+    if (position.yearsMoved !== 0) {
+      anchorYear = position.anchorYear;
+      renderWindow();
+    }
+    viewport.scrollTop = position.scrollTop;
+    normalizing = false;
+  };
+
+  const moveFractionally = (distance: number): void => {
+    const movement = accumulateScroll(scrollRemainder, distance);
+    scrollRemainder = movement.remainder;
+    if (movement.pixels !== 0) moveBy(movement.pixels);
+  };
+
   function animate(timestamp: number): void {
     frame = undefined;
     if (!playing || signal.aborted) return;
-    if (lastTimestamp !== undefined && !document.hidden && yearHeight > 0) {
-      const movement = accumulateScroll(
-        scrollRemainder,
-        scrollDistance(yearHeight, config.speed, timestamp - lastTimestamp),
-      );
-      scrollRemainder = movement.remainder;
-      if (movement.pixels !== 0) {
-        viewport.scrollTop += movement.pixels;
-        normalize();
-      }
+    if (document.hidden || yearHeight <= 0) {
+      swipe = undefined;
+      swipePosition = 0;
+      scheduleFrame();
+      return;
     }
-    lastTimestamp = timestamp;
+
+    if (swipe !== undefined && timestamp >= swipe.nextAt) {
+      moveFractionally(swipe.distance - swipePosition);
+      swipe = undefined;
+      swipePosition = 0;
+    }
+    swipe ??= createInertialSwipe(timestamp, config.speed, motionRandom);
+
+    const nextPosition = inertialSwipePosition(swipe, timestamp);
+    moveFractionally(nextPosition - swipePosition);
+    swipePosition = nextPosition;
     scheduleFrame();
   }
 
@@ -184,6 +217,8 @@ export const startScrollMode = (
         ? (viewport.scrollTop - ANCHOR_INDEX * yearHeight) / yearHeight
         : 0;
     yearHeight = measuredHeight;
+    swipe = undefined;
+    swipePosition = 0;
     normalizing = true;
     viewport.scrollTop = (ANCHOR_INDEX + progress) * yearHeight;
     normalizing = false;
@@ -207,7 +242,8 @@ export const startScrollMode = (
   document.addEventListener(
     "visibilitychange",
     () => {
-      lastTimestamp = undefined;
+      swipe = undefined;
+      swipePosition = 0;
     },
     { signal },
   );

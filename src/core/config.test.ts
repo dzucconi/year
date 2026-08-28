@@ -52,6 +52,12 @@ describe("configuration", () => {
     expect(config.background).toBe("black");
     expect(config.color).toBe("white");
     if (config.mode === "scroll") expect(config.speed).toBe(-2);
+
+    const defaults = parseConfig(
+      new URLSearchParams("mode=scroll"),
+      environment,
+    ).config;
+    if (defaults.mode === "scroll") expect(defaults.speed).toBe(160);
   });
 
   it("isolates invalid values and records concise warnings", () => {

@@ -40,7 +40,7 @@ The application has no runtime dependencies. Vite emits the production site to `
 | `play`                   | Start stacked playback or scroll-mode autoscroll                             | `false`                                             |
 | `subtitles`              | Show the sequence of questions about the future                              | `false`                                             |
 | `fps`                    | Stacked mode's nonnegative years per second                                  | `30`                                                |
-| `speed`                  | Scroll mode's signed years per minute, from −720–720                         | `1`                                                 |
+| `speed`                  | Scroll mode's signed target CSS pixels per second, from −720–720             | `160`                                               |
 | `refreshIntervalSeconds` | Refresh interval; `0` disables it                                            | `3600`                                              |
 | `seed`                   | Reproduce the random year factor and requested random colors                 | —                                                   |
 
@@ -49,11 +49,11 @@ Examples:
 ```text
 ?year=2240&play=true&fps=12
 ?mode=scroll&year=2240
-?mode=scroll&play=true&speed=1
+?mode=scroll&play=true&speed=160
 ?mode=scroll&background=random&color=random&seed=example
 ```
 
-In scroll mode, year numbering is astronomical: year `0` exists and negative integers represent earlier proleptic-Gregorian years. Automatic scrolling pauses after manual input and resumes through the centered control or Space. The pointer and control fade after inactivity, mouse movement restores them, and double-clicking toggles fullscreen in either mode. Reduced-motion preferences start autoplay in a paused state.
+In scroll mode, year numbering is astronomical: year `0` exists and negative integers represent earlier proleptic-Gregorian years. Autoplay uses subtly varied inertial swipes while preserving `speed` as its target CSS pixels per second, so the motion feels consistent across layout widths. Wheel, touch, drag, and navigation-key input remain native and pause autoplay; the centered control or Space resumes it. The pointer and control fade after inactivity, mouse movement restores them, and double-clicking toggles fullscreen in either mode. Reduced-motion preferences start autoplay in a paused state.
 
 ## Production
 

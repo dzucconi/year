@@ -19,7 +19,7 @@
 }
 
 .scroll-window {
-  width: min(100%, 96rem);
+  width: min(100%, 48rem);
   margin: 0 auto;
 }
 
@@ -142,18 +142,8 @@
 }
 
 @media (min-width: 700px) {
-  .scroll-year .calendar-year__months {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
   .scroll-year .calendar-month__grid {
     font-size: clamp(0.8rem, 1.8vw, 1.15rem);
-  }
-}
-
-@media (min-width: 1100px) {
-  .scroll-year .calendar-year__months {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   accumulateScroll,
+  createInertialSwipe,
+  inertialSwipePosition,
   normalizeScrollPosition,
   scrollDistance,
   stackedYearAt,
@@ -39,9 +41,44 @@ describe("playback", () => {
     });
   });
 
-  it("converts years per minute into viewport distance", () => {
-    expect(scrollDistance(1200, 1, 60_000)).toBe(1200);
-    expect(scrollDistance(1200, -2, 30_000)).toBe(-1200);
+  it("converts pixel velocity into distance", () => {
+    expect(scrollDistance(120, 1_000)).toBe(120);
+    expect(scrollDistance(-240, 500)).toBe(-120);
+  });
+
+  it("varies swipe duration, pause, distance, and deceleration", () => {
+    const values = [0.25, 0.75, 0.5, 0.25];
+    const swipe = createInertialSwipe(1_000, 20, () => values.shift() ?? 0);
+    expect(swipe.startedAt).toBe(1_000);
+    expect(swipe.duration).toBe(1_325);
+    expect(swipe.nextAt).toBe(4_087.5);
+    expect(swipe.distance).toBeCloseTo(61.75);
+    expect(swipe.deceleration).toBeCloseTo(0.9977);
+  });
+
+  it("tapers each inertial swipe in either direction", () => {
+    const forward = {
+      startedAt: 0,
+      duration: 1_000,
+      nextAt: 4_000,
+      distance: 100,
+      deceleration: 0.998,
+    };
+    const positions = [0, 250, 500, 750, 1_000].map((timestamp) =>
+      inertialSwipePosition(forward, timestamp),
+    );
+    const increments = positions.slice(1).map((position, index) => {
+      const previous = positions[index];
+      if (previous === undefined) throw new Error("Missing swipe position");
+      return position - previous;
+    });
+    expect(positions.at(-1)).toBe(100);
+    expect(increments[0]).toBeGreaterThan(increments[1] ?? 0);
+    expect(increments[1]).toBeGreaterThan(increments[2] ?? 0);
+    expect(increments[2]).toBeGreaterThan(increments[3] ?? 0);
+    expect(
+      inertialSwipePosition({ ...forward, distance: -100 }, 500),
+    ).toBeLessThan(0);
   });
 
   it("accumulates sub-pixel scroll in either direction", () => {
