@@ -183,7 +183,9 @@ export const startScrollMode = (
     }
 
     if (swipe !== undefined && timestamp >= swipe.nextAt) {
-      moveFractionally(swipe.distance - swipePosition);
+      if (swipe.nextAt >= swipe.startedAt + swipe.duration) {
+        moveFractionally(swipe.distance - swipePosition);
+      }
       swipe = undefined;
       swipePosition = 0;
     }

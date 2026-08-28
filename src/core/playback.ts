@@ -57,55 +57,83 @@ export const scrollDistance = (
   elapsedMilliseconds: number,
 ): number => pixelsPerSecond * (elapsedMilliseconds / 1_000);
 
-const SWIPE_DURATION_MIN = 1_100;
-const SWIPE_DURATION_RANGE = 900;
-const SWIPE_PAUSE_MIN = 450;
-const SWIPE_PAUSE_RANGE = 1_750;
-const SWIPE_DISTANCE_MIN = 0.65;
-const SWIPE_DISTANCE_RANGE = 0.7;
-const SWIPE_DECELERATION_MIN = 0.9974;
-const SWIPE_DECELERATION_RANGE = 0.0012;
+const SWIPE_TAU_MIN = 255;
+const SWIPE_TAU_RANGE = 85;
+const SWIPE_DURATION_FACTOR_MIN = 3.05;
+const SWIPE_DURATION_FACTOR_RANGE = 1.35;
+const SWIPE_OVERLAP_CHANCE = 0.4;
+const SWIPE_OVERLAP_PROGRESS_MIN = 0.46;
+const SWIPE_OVERLAP_PROGRESS_RANGE = 0.36;
+const SWIPE_PAUSE_CHANCE = 0.44;
+const SWIPE_PAUSE_MIN = 35;
+const SWIPE_PAUSE_RANGE = 220;
+const SWIPE_GLANCE_MIN = 420;
+const SWIPE_GLANCE_RANGE = 700;
+const SWIPE_DISTANCE_MIN = 0.7;
+const SWIPE_DISTANCE_RANGE = 0.75;
 
 export type InertialSwipe = Readonly<{
   startedAt: number;
   duration: number;
   nextAt: number;
   distance: number;
-  deceleration: number;
+  tau: number;
 }>;
+
+const swipeCurve = (elapsed: number, duration: number, tau: number): number => {
+  const t = Math.min(duration, Math.max(0, elapsed));
+  const travelled = 1 - Math.exp(-t / tau);
+  const total = 1 - Math.exp(-duration / tau);
+  return travelled / total;
+};
+
+const swipeGap = (random: () => number, duration: number): number => {
+  const roll = random();
+  if (roll < SWIPE_OVERLAP_CHANCE) {
+    const progress =
+      SWIPE_OVERLAP_PROGRESS_MIN +
+      (roll / SWIPE_OVERLAP_CHANCE) * SWIPE_OVERLAP_PROGRESS_RANGE;
+    return duration * progress - duration;
+  }
+  if (roll < SWIPE_OVERLAP_CHANCE + SWIPE_PAUSE_CHANCE) {
+    const progress = (roll - SWIPE_OVERLAP_CHANCE) / SWIPE_PAUSE_CHANCE;
+    return SWIPE_PAUSE_MIN + progress * SWIPE_PAUSE_RANGE;
+  }
+  const progress =
+    (roll - SWIPE_OVERLAP_CHANCE - SWIPE_PAUSE_CHANCE) /
+    (1 - SWIPE_OVERLAP_CHANCE - SWIPE_PAUSE_CHANCE);
+  return SWIPE_GLANCE_MIN + progress * SWIPE_GLANCE_RANGE;
+};
 
 export const createInertialSwipe = (
   startedAt: number,
   pixelsPerSecond: number,
   random: () => number,
 ): InertialSwipe => {
-  const duration = SWIPE_DURATION_MIN + random() * SWIPE_DURATION_RANGE;
-  const pause = SWIPE_PAUSE_MIN + random() * SWIPE_PAUSE_RANGE;
+  const tau = SWIPE_TAU_MIN + random() * SWIPE_TAU_RANGE;
+  const duration =
+    tau * (SWIPE_DURATION_FACTOR_MIN + random() * SWIPE_DURATION_FACTOR_RANGE);
+  const gap = swipeGap(random, duration);
   const distanceFactor = SWIPE_DISTANCE_MIN + random() * SWIPE_DISTANCE_RANGE;
-  const deceleration =
-    SWIPE_DECELERATION_MIN + random() * SWIPE_DECELERATION_RANGE;
-  const interval = duration + pause;
+  const interval = duration + gap;
+  const travelled = swipeCurve(interval, duration, tau);
+  const distance =
+    (scrollDistance(pixelsPerSecond, interval) * distanceFactor) / travelled;
   return {
     startedAt,
     duration,
     nextAt: startedAt + interval,
-    distance: scrollDistance(pixelsPerSecond, interval) * distanceFactor,
-    deceleration,
+    distance,
+    tau,
   };
 };
 
 export const inertialSwipePosition = (
   swipe: InertialSwipe,
   timestamp: number,
-): number => {
-  const elapsed = Math.min(
-    swipe.duration,
-    Math.max(0, timestamp - swipe.startedAt),
-  );
-  const travelled = 1 - swipe.deceleration ** elapsed;
-  const total = 1 - swipe.deceleration ** swipe.duration;
-  return swipe.distance * (travelled / total);
-};
+): number =>
+  swipe.distance *
+  swipeCurve(timestamp - swipe.startedAt, swipe.duration, swipe.tau);
 
 export type AccumulatedScroll = Readonly<{
   pixels: number;

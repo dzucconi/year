@@ -57,7 +57,7 @@ describe("configuration", () => {
       new URLSearchParams("mode=scroll"),
       environment,
     ).config;
-    if (defaults.mode === "scroll") expect(defaults.speed).toBe(160);
+    if (defaults.mode === "scroll") expect(defaults.speed).toBe(1800);
   });
 
   it("isolates invalid values and records concise warnings", () => {

@@ -199,7 +199,7 @@ export const parseConfig = (
       ? {
           ...shared,
           mode,
-          speed: parseNumber(parameters, "speed", 160, -720, 720, warnings),
+          speed: parseNumber(parameters, "speed", 1800, -3600, 3600, warnings),
         }
       : {
           ...shared,

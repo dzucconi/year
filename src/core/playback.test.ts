@@ -46,23 +46,39 @@ describe("playback", () => {
     expect(scrollDistance(-240, 500)).toBe(-120);
   });
 
-  it("varies swipe duration, pause, distance, and deceleration", () => {
+  it("varies swipe duration, pause, distance, and decay", () => {
     const values = [0.25, 0.75, 0.5, 0.25];
     const swipe = createInertialSwipe(1_000, 20, () => values.shift() ?? 0);
     expect(swipe.startedAt).toBe(1_000);
-    expect(swipe.duration).toBe(1_325);
-    expect(swipe.nextAt).toBe(4_087.5);
-    expect(swipe.distance).toBeCloseTo(61.75);
-    expect(swipe.deceleration).toBeCloseTo(0.9977);
+    expect(swipe.tau).toBeCloseTo(276.25);
+    expect(swipe.duration).toBeCloseTo(1_122.265625);
+    expect(swipe.nextAt).toBeCloseTo(2_207.266);
+    expect(swipe.distance).toBeCloseTo(21.429);
   });
 
-  it("tapers each inertial swipe in either direction", () => {
+  it("uses a longer glance pause on some flicks", () => {
+    const values = [0.2, 0.4, 0.92, 0.5];
+    const swipe = createInertialSwipe(0, 1_800, () => values.shift() ?? 0);
+    expect(swipe.nextAt - swipe.duration).toBeGreaterThan(420);
+  });
+
+  it("can start the next flick before the coast finishes", () => {
+    const values = [0.3, 0.5, 0.15, 0.5];
+    const swipe = createInertialSwipe(0, 1_800, () => values.shift() ?? 0);
+    expect(swipe.nextAt).toBeLessThan(swipe.duration);
+    expect(
+      inertialSwipePosition(swipe, swipe.nextAt) /
+        inertialSwipePosition(swipe, swipe.startedAt + swipe.duration),
+    ).toBeLessThan(1);
+  });
+
+  it("throws then coasts like an iPhone flick", () => {
     const forward = {
       startedAt: 0,
       duration: 1_000,
-      nextAt: 4_000,
+      nextAt: 1_200,
       distance: 100,
-      deceleration: 0.998,
+      tau: 300,
     };
     const positions = [0, 250, 500, 750, 1_000].map((timestamp) =>
       inertialSwipePosition(forward, timestamp),
@@ -72,7 +88,8 @@ describe("playback", () => {
       if (previous === undefined) throw new Error("Missing swipe position");
       return position - previous;
     });
-    expect(positions.at(-1)).toBe(100);
+    expect(positions.at(-1)).toBeCloseTo(100);
+    expect(positions[1] ?? 0).toBeGreaterThan(50);
     expect(increments[0]).toBeGreaterThan(increments[1] ?? 0);
     expect(increments[1]).toBeGreaterThan(increments[2] ?? 0);
     expect(increments[2]).toBeGreaterThan(increments[3] ?? 0);
