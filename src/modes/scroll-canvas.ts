@@ -5,7 +5,6 @@ import {
 } from "../core/calendar.ts";
 
 const MAX_RENDER_SCALE = 2;
-const MAX_TILE_COUNT = 4;
 const MAX_MONTH_TILE_COUNT = 32;
 const FONT_FAMILY =
   '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
@@ -178,18 +177,21 @@ const renderMonth = (
 };
 
 const renderYear = (
+  canvas: HTMLCanvasElement,
   year: bigint,
   layout: ScrollCanvasLayout,
   scale: number,
   background: string,
   foreground: string,
   monthTile: (month: MonthCalendar, index: number) => CanvasSurface,
-): CanvasSurface => {
-  const surface = createSurface(
-    Math.ceil(layout.containerWidth * scale),
-    Math.ceil(layout.yearHeight * scale),
-  );
-  const context = contextFor(surface, false);
+): void => {
+  const width = Math.ceil(layout.containerWidth * scale);
+  const height = Math.ceil(layout.yearHeight * scale);
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  canvas.style.width = `${layout.containerWidth}px`;
+  canvas.style.height = `${layout.yearHeight}px`;
+  const context = contextFor(canvas, false);
   context.setTransform(scale, 0, 0, scale, 0, 0);
   context.fillStyle = background;
   context.fillRect(0, 0, layout.containerWidth, layout.yearHeight);
@@ -222,18 +224,15 @@ const renderYear = (
       layout.monthHeight,
     );
   });
-
-  return surface;
 };
 
 export type ScrollCanvasRenderer = Readonly<{
   layout: ScrollCanvasLayout;
   renderScale: number;
-  draw: (year: bigint, offset: number) => void;
+  draw: (canvas: HTMLCanvasElement, year: bigint) => void;
 }>;
 
 export const createScrollCanvasRenderer = (
-  canvas: HTMLCanvasElement,
   viewportWidth: number,
   viewportHeight: number,
   deviceScale: number,
@@ -242,12 +241,6 @@ export const createScrollCanvasRenderer = (
 ): ScrollCanvasRenderer => {
   const layout = scrollCanvasLayout(viewportWidth, viewportHeight);
   const renderScale = Math.min(MAX_RENDER_SCALE, Math.max(1, deviceScale));
-  canvas.width = Math.ceil(viewportWidth * renderScale);
-  canvas.height = Math.ceil(viewportHeight * renderScale);
-  canvas.dataset.renderScale = String(renderScale);
-  const context = canvas.getContext("2d", { alpha: false });
-  if (context === null) throw new Error("Canvas 2D is unavailable");
-  const tiles = new Map<string, CanvasSurface>();
   const monthTiles = new Map<string, CanvasSurface>();
 
   const monthTileFor = (month: MonthCalendar, index: number): CanvasSurface => {
@@ -273,15 +266,9 @@ export const createScrollCanvasRenderer = (
     return tile;
   };
 
-  const tileFor = (year: bigint): CanvasSurface => {
-    const key = year.toString();
-    const cached = tiles.get(key);
-    if (cached !== undefined) {
-      tiles.delete(key);
-      tiles.set(key, cached);
-      return cached;
-    }
-    const tile = renderYear(
+  const draw = (canvas: HTMLCanvasElement, year: bigint): void => {
+    renderYear(
+      canvas,
       year,
       layout,
       renderScale,
@@ -289,32 +276,8 @@ export const createScrollCanvasRenderer = (
       foreground,
       monthTileFor,
     );
-    tiles.set(key, tile);
-    if (tiles.size > MAX_TILE_COUNT) {
-      const oldest = tiles.keys().next().value;
-      if (oldest !== undefined) tiles.delete(oldest);
-    }
-    return tile;
-  };
-
-  const draw = (year: bigint, offset: number): void => {
-    context.setTransform(renderScale, 0, 0, renderScale, 0, 0);
-    context.fillStyle = background;
-    context.fillRect(0, 0, viewportWidth, viewportHeight);
-    let tileYear = year;
-    let tileY = -offset;
-    while (tileY < viewportHeight) {
-      context.drawImage(
-        tileFor(tileYear),
-        layout.containerLeft,
-        tileY,
-        layout.containerWidth,
-        layout.yearHeight,
-      );
-      tileYear += 1n;
-      tileY += layout.yearHeight;
-    }
-    canvas.dataset.tileCount = String(tiles.size);
+    canvas.dataset.year = year.toString();
+    canvas.dataset.renderScale = String(renderScale);
     canvas.dataset.monthTileCount = String(monthTiles.size);
   };
 

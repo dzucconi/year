@@ -17,13 +17,11 @@
   background: var(--background);
 }
 
-.scroll-canvas {
+.scroll-year-tile {
   position: absolute;
-  inset: 0;
   display: block;
-  width: 100%;
-  height: 100%;
   contain: strict;
+  pointer-events: none;
 }
 
 .scroll-viewport {
@@ -43,7 +41,8 @@
 }
 
 .scroll-track {
-  width: 1px;
+  position: relative;
+  width: 100%;
   overflow-anchor: none;
   pointer-events: none;
 }

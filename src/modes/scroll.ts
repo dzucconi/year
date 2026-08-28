@@ -19,6 +19,8 @@ const NATIVE_SCROLL_RANGE = 1_000_000;
 const NATIVE_SCROLL_IDLE_MILLISECONDS = 120;
 const YEAR_SYNC_INTERVAL_MILLISECONDS = 500;
 const INITIAL_AUTOPLAY_DELAY_MILLISECONDS = 750;
+const YEAR_TILE_COUNT = 5;
+const YEAR_TILE_ANCHOR = Math.floor(YEAR_TILE_COUNT / 2);
 const SCROLL_KEYS = new Set([
   "ArrowDown",
   "ArrowUp",
@@ -45,6 +47,11 @@ type SemanticMonth = Readonly<{
   heading: HTMLHeadingElement;
   days: HTMLParagraphElement;
 }>;
+
+type YearTile = {
+  canvas: HTMLCanvasElement;
+  year: bigint | undefined;
+};
 
 const createSemanticCalendar = (): Readonly<{
   root: HTMLElement;
@@ -75,20 +82,24 @@ export const startScrollMode = (
   document.body.className = "mode-scroll";
 
   const stage = document.createElement("div");
-  const canvas = document.createElement("canvas");
   const viewport = document.createElement("div");
   const track = document.createElement("div");
   const semantic = createSemanticCalendar();
+  const tiles: YearTile[] = Array.from({ length: YEAR_TILE_COUNT }, () => {
+    const canvas = document.createElement("canvas");
+    canvas.className = "scroll-year-tile";
+    canvas.setAttribute("aria-hidden", "true");
+    return { canvas, year: undefined };
+  });
   stage.className = "scroll-stage";
-  canvas.className = "scroll-canvas";
-  canvas.setAttribute("aria-hidden", "true");
   viewport.className = "scroll-viewport";
   viewport.tabIndex = 0;
   viewport.setAttribute("aria-label", "Endless calendar");
   track.className = "scroll-track";
   track.style.height = `${NATIVE_SCROLL_RANGE}px`;
+  track.append(...tiles.map(({ canvas }) => canvas));
   viewport.append(track);
-  stage.append(canvas, viewport, semantic.root);
+  stage.append(viewport, semantic.root);
 
   const playback = document.createElement("button");
   const playbackIcon = document.createElement("span");
@@ -101,14 +112,12 @@ export const startScrollMode = (
   app.replaceChildren(stage, playback);
 
   let year = config.year;
-  let offset = 0;
+  let yearTop = 0;
   let renderer: ScrollCanvasRenderer | undefined;
   let frame: number | undefined;
-  let paintFrame: number | undefined;
   let wakeTimer: number | undefined;
   let yearSyncTimer: number | undefined;
   let nativeScrollIdleTimer: number | undefined;
-  let nativeScrollPosition = 0;
   let swipe: InertialSwipe | undefined;
   let swipePosition = 0;
   let lastSyncedYear: bigint | undefined;
@@ -150,28 +159,63 @@ export const startScrollMode = (
     );
   };
 
-  const paint = (): void => renderer?.draw(year, offset);
-
-  const schedulePaint = (): void => {
-    if (paintFrame !== undefined) return;
-    paintFrame = requestAnimationFrame(() => {
-      paintFrame = undefined;
-      paint();
-    });
+  const positionTile = (tile: YearTile): void => {
+    if (renderer === undefined || tile.year === undefined) return;
+    const relativeYear = Number(tile.year - year);
+    tile.canvas.style.top = `${yearTop + relativeYear * renderer.layout.yearHeight}px`;
+    tile.canvas.style.left = `${renderer.layout.containerLeft}px`;
   };
 
-  const moveBy = (pixels: number): boolean => {
-    if (renderer === undefined) return false;
+  const reconcileTiles = (redrawAll = false): void => {
+    const currentRenderer = renderer;
+    if (currentRenderer === undefined) return;
+    const desiredYears = Array.from(
+      { length: YEAR_TILE_COUNT },
+      (_, index) => year + BigInt(index - YEAR_TILE_ANCHOR),
+    );
+    const desiredKeys = new Set(desiredYears.map(String));
+    const byYear = new Map(
+      tiles.flatMap((tile) =>
+        tile.year === undefined ? [] : [[tile.year.toString(), tile] as const],
+      ),
+    );
+    const unused = tiles.filter(
+      (tile) =>
+        tile.year === undefined || !desiredKeys.has(tile.year.toString()),
+    );
+    const ordered = desiredYears.map((desiredYear) => {
+      const existing = byYear.get(desiredYear.toString());
+      const tile = existing ?? unused.shift();
+      if (tile === undefined) throw new Error("Missing scroll year tile");
+      if (redrawAll || tile.year !== desiredYear) {
+        tile.year = desiredYear;
+        currentRenderer.draw(tile.canvas, desiredYear);
+      }
+      positionTile(tile);
+      return tile;
+    });
+    tiles.splice(0, tiles.length, ...ordered);
+  };
+
+  const updateFromScroll = (): void => {
+    if (renderer === undefined) return;
     const cursor = moveScrollCursor(
       year,
-      offset,
-      pixels,
+      0,
+      viewport.scrollTop - yearTop,
       renderer.layout.yearHeight,
     );
+    if (cursor.yearsMoved === 0) return;
     year = cursor.year;
-    offset = cursor.offset;
-    if (cursor.yearsMoved !== 0) scheduleYearSync();
-    return cursor.yearsMoved !== 0 || pixels !== 0;
+    yearTop += cursor.yearsMoved * renderer.layout.yearHeight;
+    reconcileTiles();
+    scheduleYearSync();
+  };
+
+  const moveBy = (pixels: number): void => {
+    if (renderer === undefined || pixels === 0) return;
+    viewport.scrollTop += pixels;
+    updateFromScroll();
   };
 
   const updateButton = (): void => {
@@ -239,7 +283,6 @@ export const startScrollMode = (
     const nextPosition = inertialSwipePosition(swipe, timestamp);
     moveBy(nextPosition - swipePosition);
     swipePosition = nextPosition;
-    paint();
 
     const swipeEndsAt = swipe.startedAt + swipe.duration;
     if (timestamp >= swipeEndsAt && swipe.nextAt > timestamp) {
@@ -257,8 +300,12 @@ export const startScrollMode = (
   };
 
   const centerNativeScroll = (): void => {
+    if (renderer === undefined) return;
     const center = (viewport.scrollHeight - viewport.clientHeight) / 2;
-    nativeScrollPosition = center;
+    const shift = center - viewport.scrollTop;
+    if (Math.abs(shift) < 1) return;
+    yearTop += shift;
+    tiles.forEach(positionTile);
     viewport.scrollTop = center;
   };
 
@@ -272,12 +319,7 @@ export const startScrollMode = (
   };
 
   const onScroll = (): void => {
-    const nextPosition = viewport.scrollTop;
-    const distance = nextPosition - nativeScrollPosition;
-    nativeScrollPosition = nextPosition;
-    if (distance === 0) return;
-    pauseFromInput();
-    if (moveBy(distance)) schedulePaint();
+    updateFromScroll();
     scheduleNativeScrollReset();
   };
 
@@ -297,7 +339,8 @@ export const startScrollMode = (
     if (!SCROLL_KEYS.has(event.key) || isInteractive(event.target)) return;
     event.preventDefault();
     pauseFromInput();
-    if (moveBy(keyDistance(event.key))) schedulePaint();
+    moveBy(keyDistance(event.key));
+    scheduleNativeScrollReset();
   };
 
   const measure = (): void => {
@@ -305,18 +348,26 @@ export const startScrollMode = (
     const height = stage.clientHeight;
     if (!(width > 0) || !(height > 0)) return;
     const previousHeight = renderer?.layout.yearHeight;
-    const progress = previousHeight === undefined ? 0 : offset / previousHeight;
+    const progress =
+      previousHeight === undefined
+        ? 0
+        : (viewport.scrollTop - yearTop) / previousHeight;
     const styles = getComputedStyle(document.documentElement);
     renderer = createScrollCanvasRenderer(
-      canvas,
       width,
       height,
       window.devicePixelRatio,
       styles.backgroundColor,
       styles.color,
     );
-    offset = progress * renderer.layout.yearHeight;
-    paint();
+    if (previousHeight === undefined) {
+      const center = (viewport.scrollHeight - viewport.clientHeight) / 2;
+      viewport.scrollTop = center;
+      yearTop = center;
+    } else {
+      yearTop = viewport.scrollTop - progress * renderer.layout.yearHeight;
+    }
+    reconcileTiles(true);
   };
 
   startSharedEffects(config, subtitles, signal);
@@ -324,7 +375,6 @@ export const startScrollMode = (
   lastSyncedYear = year;
   updateButton();
   measure();
-  centerNativeScroll();
 
   viewport.addEventListener("scroll", onScroll, { passive: true, signal });
   viewport.addEventListener("wheel", pauseFromInput, { passive: true, signal });
@@ -348,7 +398,6 @@ export const startScrollMode = (
     () => {
       resizeObserver.disconnect();
       if (frame !== undefined) cancelAnimationFrame(frame);
-      if (paintFrame !== undefined) cancelAnimationFrame(paintFrame);
       clearWakeTimer();
       if (yearSyncTimer !== undefined) window.clearTimeout(yearSyncTimer);
       if (nativeScrollIdleTimer !== undefined)
