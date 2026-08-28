@@ -8,19 +8,18 @@
 
 .scroll-viewport {
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   overscroll-behavior-y: contain;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.scroll-viewport::-webkit-scrollbar {
-  display: none;
+  touch-action: none;
+  user-select: none;
 }
 
 .scroll-window {
   width: min(100%, 48rem);
   margin: 0 auto;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 .scroll-year {
@@ -86,8 +85,6 @@
   transition:
     opacity 300ms ease,
     background-color 150ms ease;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   cursor: pointer;
 }
 

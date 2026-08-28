@@ -1,5 +1,7 @@
 import { calendarForYear, formatYear } from "./calendar.ts";
 
+const TEMPLATE_CALENDAR = calendarForYear(2000n);
+
 type MonthView = Readonly<{
   root: HTMLElement;
   days: readonly HTMLElement[];
@@ -22,7 +24,7 @@ const element = <Tag extends keyof HTMLElementTagNameMap>(
 
 const createMonth = (monthIndex: number, labelled: boolean): MonthView => {
   const root = element(labelled ? "article" : "div", "calendar-month");
-  const calendar = calendarForYear(2000n).months[monthIndex];
+  const calendar = TEMPLATE_CALENDAR.months[monthIndex];
   if (calendar === undefined) throw new Error(`Missing month ${monthIndex}`);
 
   if (labelled) {
@@ -71,19 +73,24 @@ export const updateYearView = (
   calendar.months.forEach((month, index) => {
     const monthView = view.months[index];
     if (monthView === undefined) throw new Error(`Missing month view ${index}`);
-    monthView.root.dataset.start = String(month.firstWeekday);
     monthView.root.setAttribute("aria-label", `${month.name} ${label}`);
 
-    monthView.days.forEach((day, dayIndex) => {
-      day.hidden = dayIndex >= month.length;
-      if (layout === "overlay") {
+    if (layout === "overlay") {
+      monthView.root.dataset.start = String(month.firstWeekday);
+      monthView.days.forEach((day, dayIndex) => {
+        day.hidden = dayIndex >= month.length;
         const cell = month.firstWeekday + dayIndex;
         day.style.transform = `translate(${(cell % 7) * 2}em, ${Math.floor(cell / 7) * 1.2}em)`;
-      }
-    });
+      });
+      return;
+    }
 
     const firstDay = monthView.days[0];
-    if (layout === "grid" && firstDay !== undefined)
+    if (firstDay !== undefined)
       firstDay.style.gridColumnStart = String(month.firstWeekday + 1);
+    if (index === 1) {
+      const leapDay = monthView.days[28];
+      if (leapDay !== undefined) leapDay.hidden = month.length === 28;
+    }
   });
 };

@@ -10,7 +10,7 @@ I like that one can just keep clicking in calendaring software and schedule some
 
 When you schedule something with someone else, there's the ritual overlaying of calendars. One "finds a time" — a hole of potential in our routines. I made this after imagining the stack of calendars that scheduling creates in one's mind when pursuing those holes. (2016)
 
-`?mode=scroll` presents the same calendar model as an endless, conventional sequence of years. It keeps nine years mounted and recycles them as the viewport moves, so its DOM and scroll range remain bounded even across astronomical year zero and negative years.
+`?mode=scroll` presents the same calendar model as an endless, conventional sequence of years. It keeps five years mounted and recycles only the section leaving the window, so its DOM and coordinate range remain bounded even across astronomical year zero and negative years.
 
 ## Development
 
@@ -53,7 +53,7 @@ Examples:
 ?mode=scroll&background=random&color=random&seed=example
 ```
 
-In scroll mode, year numbering is astronomical: year `0` exists and negative integers represent earlier proleptic-Gregorian years. Autoplay uses iPhone-like inertial flicks — a fast throw, an exponential coast, then a brief rest, an overlapping flick that picks up mid-coast, or an occasional glance — while preserving `speed` as its target CSS pixels per second, so the motion feels consistent across layout widths. Wheel, touch, drag, and navigation-key input remain native and pause autoplay; the centered control or Space resumes it. The pointer and control fade after inactivity, mouse movement restores them, and double-clicking toggles fullscreen in either mode. Reduced-motion preferences start autoplay in a paused state.
+In scroll mode, year numbering is astronomical: year `0` exists and negative integers represent earlier proleptic-Gregorian years. Autoplay uses iPhone-like inertial flicks — a fast throw, an exponential coast, then a brief rest, an overlapping flick that picks up mid-coast, or an occasional glance — while preserving `speed` as its target CSS pixels per second, so the motion feels consistent across layout widths. The calendar moves on a GPU-composited transform rather than native scroll coordinates. Wheel, touch, drag, and navigation-key input feed that same virtual position and pause autoplay; the centered control or Space resumes it. The pointer and control fade after inactivity, mouse movement restores them, and double-clicking toggles fullscreen in either mode. Reduced-motion preferences start autoplay in a paused state.
 
 ## Production
 
